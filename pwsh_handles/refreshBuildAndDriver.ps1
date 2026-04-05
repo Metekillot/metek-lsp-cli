@@ -1,0 +1,1 @@
+del build -Recurse -Force;dotnet build -c Release --ucr;Add-Type -Path ./build/net10.0/linux-x64/wrapperFill.dll;$driver = [driver]::new("/home/metek/code/git/CataclysmTLG", (which clangd), "--compile-commands-dir=/home/metek/code/git/CataclysmTLG/clang_build")
