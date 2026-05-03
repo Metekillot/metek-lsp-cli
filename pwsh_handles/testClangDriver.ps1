@@ -1,4 +1,4 @@
-using module '/home/metek/sandbox/wrapperFill/LspWrapper.psd1'
+using module './LspWrapper.psd1'
 function Get-LspWrapper {
     param(
 [string]$repoRoot,

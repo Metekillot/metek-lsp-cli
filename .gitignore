@@ -483,3 +483,4 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 build
+pwsh_handles/PreviousDriverRefreshConfig.cli_xml

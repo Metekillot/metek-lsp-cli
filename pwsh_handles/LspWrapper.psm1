@@ -15,7 +15,7 @@
 # Assembly loaded via LspWrapper.psd1 RequiredAssemblies
 #
 # Wrapper for Driver, which is itself a more ergonomic handle on the omnisharp LSP functions
-Add-Type -Path 'build/net10.0/wrapperFill.dll'
+Add-Type -Path (Join-Path $PSScriptRoot 'lib/metek-lsp-cli.dll')
 class LspWrapper {
     [Driver]$Driver
 

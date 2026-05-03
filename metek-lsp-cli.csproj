@@ -3,10 +3,12 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <OutputPath>build</OutputPath>
+    <OutputPath>pwsh_handles/lib</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>0</WarningLevel>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -18,9 +20,8 @@
   </ItemGroup>
 
   <Target Name="FullClean" AfterTargets="Clean">
-    <RemoveDir Directories="$(BaseOutputPath)" />
     <RemoveDir Directories="$(BaseIntermediateOutputPath)" />
-    <RemoveDir Directories="build" />
+    <RemoveDir Directories="pwsh_handles/lib" />
   </Target>
 
 </Project>

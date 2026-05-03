@@ -15,5 +15,5 @@
 @{
     RootModule        = 'LspWrapper.psm1'
     ModuleVersion     = '0.1.0'
-    RequiredAssemblies = @('build/net10.0/wrapperFill.dll')
+    RequiredAssemblies = @('lib/metek-lsp-cli.dll')
 }
