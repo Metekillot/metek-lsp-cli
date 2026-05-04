@@ -133,11 +133,11 @@ public partial class Driver
                 DynamicRegistration = true,
                 SignatureInformation = new SignatureInformationCapabilityOptions
                 {
-                    DocumentationFormat = new Container<MarkupKind>(MarkupKind.Markdown, MarkupKind.PlainText),
+                    DocumentationFormat = new Container<MarkupKind>(MarkupKind.PlainText),
                     ParameterInformation = new SignatureParameterInformationCapabilityOptions { LabelOffsetSupport = true },
                     ActiveParameterSupport = true,
                 },
-                ContextSupport = true,
+//                ContextSupport = true,
             },
             References = new ReferenceCapability { DynamicRegistration = true },
             DocumentHighlight = new DocumentHighlightCapability { DynamicRegistration = true },
@@ -263,6 +263,10 @@ public partial class Driver
             },
             PositionEncodings = new Container<PositionEncodingKind>(PositionEncodingKind.UTF16),
         },
+        Experimental = new Dictionary<string, JToken>()
+        {
+            {"dreammaker", JToken.Parse("{\"objectTree\": true, \"objectTree2\": true}") }
+        }
     };
 
     public static readonly string[] ServerNotificationMethods = DiscoverServerNotifications();
@@ -270,13 +274,16 @@ public partial class Driver
     public static string[] DiscoverServerNotifications()
     {
         var assembly = typeof(TextDocumentPositionParams).Assembly;
-        return assembly.GetTypes()
+        var positionParamNotifs = assembly.GetTypes()
             .Where(t => !t.IsAbstract && !t.IsInterface && typeof(IRequest<Unit>).IsAssignableFrom(t))
             .SelectMany(t => t.GetCustomAttributes<MethodAttribute>())
             .Where(a => (a.Direction & Direction.ServerToClient) != 0)
             .Select(a => a.Method)
             .Distinct()
             .ToArray();
+        string[] specialNotifs = ["experimental/dreammaker/objectTree2"];
+        string[] combinedListening = positionParamNotifs.Concat(specialNotifs).ToArray();
+        return combinedListening;
     }
 
     public static void ConfigureOptions(LanguageClientOptions options)
