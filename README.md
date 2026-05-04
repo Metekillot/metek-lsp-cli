@@ -7,6 +7,10 @@ A good-enough-practices implementation of a CLI interface for the LSP ( Language
 
 Has special support for [SpacemanDMM's object trees for DreamMaker](https://github.com/SpaceManiac/SpacemanDMM); otherwise, it is slowly gaining robust support for LSP tooling that would be most convenient from the command line.
 
+# csharp-language-server-protocol
+
+As stated within [the LICENSE.csharp-language-server-protocol](./LICENSE.csharp-language-server-protocol) file in this directory and additionally within their own licensing. [the csharp-language-server-protocol fork used as a library and kept as a module](lib/csharp-language-server-protocol/) remains covered under the MIT license, with All Rights Reserved by the .NET Foundation and Contributors
+
 ## Currently implemented:
 
 ### Hover
