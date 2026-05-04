@@ -484,3 +484,4 @@ $RECYCLE.BIN/
 *.swp
 build
 pwsh_handles/PreviousDriverRefreshConfig.cli_xml
+*.dll

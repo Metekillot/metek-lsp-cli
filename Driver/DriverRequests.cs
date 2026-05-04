@@ -27,6 +27,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Progress;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using static OmniSharp.Extensions.JsonRpc.DelegatingHandlers;
 using static OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
@@ -34,6 +35,7 @@ public partial class Driver
 {
     public TDXTable TDX { get; set; } = null;
     public DOCTable DOC { get; set; } = null;
+    public WSPTable WSP { get; set; } = null;
 
     public class TokenDecoder
     {
@@ -109,6 +111,7 @@ public partial class Driver
         Console.WriteLine("Configuring Requests.");
         TDX = new TDXTable();
         DOC = new DOCTable();
+        WSP = new WSPTable();
         Decoder = new TokenDecoder();
     }
 }
@@ -126,7 +129,7 @@ public static class AST
 public record ASTParams
 {
     public TextDocumentIdentifier textDocument;
-    public Range range;
+    public OmniSharp.Extensions.LanguageServer.Protocol.Models.Range range;
     public ASTParams(
         string path,
         int startLine,
@@ -162,7 +165,7 @@ public class DOCTable : RequestTable
     public Task<Container<FoldingRange>?> FoldingRange(string fileName)
     => client.RequestFoldingRange(new FoldingRangeRequestParam
     {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath))
+        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath))
     }).AsTask();
 }
 
@@ -258,5 +261,14 @@ public class TDXTable : RequestTable
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
             Position = (line, character)
+        }).AsTask();
+}
+
+public class WSPTable : RequestTable
+{
+    public Task<Container<WorkspaceSymbol>?> WorkspaceSymbols(string query)
+        => client.RequestWorkspaceSymbols(new WorkspaceSymbolParams
+        {
+            Query = query
         }).AsTask();
 }

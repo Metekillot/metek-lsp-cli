@@ -1,4 +1,4 @@
-﻿﻿/*
+﻿/*
 * Copyright (c) 2026, Joshua 'Joan Metek' Kidder
 *
 * This file is part of metek-lsp-cli,
@@ -31,6 +31,33 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.JsonRpc.Server;
 
 
+public static class FreeAsInFreedom
+{
+    public static void LicenseNotice()
+    {
+        const string notice = """
+        
+        =
+
+        metek-lsp-cli 0.2 Copyright (c) 2026 Joshua 'Joan Metek' Kidder
+
+        metek-lsp-cli is free software: you can redistribute it and/or modify it 
+        under the terms of the GNU Lesser General Public License as published by
+        the Free Software Foundation, either version 3 of the License, or (at 
+        your option) any later version.
+
+        metek-lsp-cli is distributed in the hope that it will be useful, but
+        this program comes with ABSOLUTELY NO WARRANTY.
+
+        You should have received a copy of the GNU Lesser General Public License 
+        along with metek-lsp-cli. If not, see <https://www.gnu.org/licenses/>. 
+        
+        =
+
+        """;
+        Console.Write(notice);
+    }
+}
 public partial class Driver
 {
     public static Uri ProjectRoot { get; set; } = null;
@@ -46,6 +73,7 @@ public partial class Driver
     public Dictionary<string, List<Notification>> notif => Driver.Notifications;
     public Driver(string rootPath, string serverBinary, string[]? serverArgs = null)
     {
+        FreeAsInFreedom.LicenseNotice();
         try
         {
             Driver.RootPath = Path.GetFullPath(rootPath);

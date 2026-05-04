@@ -45,10 +45,10 @@ if ($UsePreviousConfiguration) {
 
 dotnet clean $slnx
 if ($DebugConfig) {
-    dotnet build $slnx -c Debug --ucr
+    dotnet build $slnx -v q -c Debug --ucr
 }
 else {
-    dotnet build $slnx -c Release --ucr
+    dotnet build $slnx -v q -c Release --ucr
 }
 Add-Type -Path ./lib/metek-lsp-cli.dll
-$driver = [driver]::new($Config._ProjectRoot, $Config._LanguageServerCommand, $Config._AdditionalArguments)
+$Global:driver = [driver]::new($Config._ProjectRoot, $Config._LanguageServerCommand, $Config._AdditionalArguments)

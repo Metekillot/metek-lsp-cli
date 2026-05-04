@@ -25,19 +25,20 @@ using Newtonsoft.Json;
 using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
 using static OmniSharp.Extensions.LanguageServer.Protocol.AbstractHandlers;
 
-public partial class Driver {
+public partial class Driver
+{
 
-public static JsonSerializer _notifSerializer = JsonSerializer.Create();
-public JsonSerializer NotifSerializer => Driver._notifSerializer;
-public static readonly Container<SymbolKind> AllSymbolKinds = new(
-        SymbolKind.File, SymbolKind.Module, SymbolKind.Namespace, SymbolKind.Package,
-        SymbolKind.Class, SymbolKind.Method, SymbolKind.Property, SymbolKind.Field,
-        SymbolKind.Constructor, SymbolKind.Enum, SymbolKind.Interface, SymbolKind.Function,
-        SymbolKind.Variable, SymbolKind.Constant, SymbolKind.String, SymbolKind.Number,
-        SymbolKind.Boolean, SymbolKind.Array, SymbolKind.Object, SymbolKind.Key,
-        SymbolKind.Null, SymbolKind.EnumMember, SymbolKind.Struct, SymbolKind.Event,
-        SymbolKind.Operator, SymbolKind.TypeParameter
-    );
+    public static JsonSerializer _notifSerializer = JsonSerializer.Create();
+    public JsonSerializer NotifSerializer => Driver._notifSerializer;
+    public static readonly Container<SymbolKind> AllSymbolKinds = new(
+            SymbolKind.File, SymbolKind.Module, SymbolKind.Namespace, SymbolKind.Package,
+            SymbolKind.Class, SymbolKind.Method, SymbolKind.Property, SymbolKind.Field,
+            SymbolKind.Constructor, SymbolKind.Enum, SymbolKind.Interface, SymbolKind.Function,
+            SymbolKind.Variable, SymbolKind.Constant, SymbolKind.String, SymbolKind.Number,
+            SymbolKind.Boolean, SymbolKind.Array, SymbolKind.Object, SymbolKind.Key,
+            SymbolKind.Null, SymbolKind.EnumMember, SymbolKind.Struct, SymbolKind.Event,
+            SymbolKind.Operator, SymbolKind.TypeParameter
+        );
 
     public static readonly Container<CompletionItemKind> AllCompletionItemKinds = new(
         CompletionItemKind.Text, CompletionItemKind.Method, CompletionItemKind.Function,
@@ -201,7 +202,6 @@ public static readonly Container<SymbolKind> AllSymbolKinds = new(
                 Requests = new SemanticTokensCapabilityRequests
                 {
                     Full = new SemanticTokensCapabilityRequestFull { Delta = true },
-                    Range = new SemanticTokensCapabilityRequestRange(),
                 },
                 TokenTypes = new Container<SemanticTokenType>(
                     SemanticTokenType.Namespace, SemanticTokenType.Type, SemanticTokenType.Class,
@@ -287,7 +287,7 @@ public static readonly Container<SymbolKind> AllSymbolKinds = new(
             .WithRootUri(ProjectRoot)
             .WithClientInfo(new ClientInfo { Name = "LspCLIWrapper", Version = "0.1" })
             .WithClientCapabilities(BuildClientCapabilities());
-            
+
 
         foreach (var method in ServerNotificationMethods)
         {

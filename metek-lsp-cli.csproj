@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -17,6 +17,8 @@
 
   <ItemGroup>
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/Client/Client.csproj" />
+    <Compile Remove="lib/**/*.cs" />
+    <None Remove="lib/**/*.cs" />
   </ItemGroup>
 
   <Target Name="FullClean" AfterTargets="Clean">
@@ -25,3 +27,4 @@
   </Target>
 
 </Project>
+
