@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <RunAnalyzers>false</RunAnalyzers>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <NoWarn>$(NoWarn);CA;CS</NoWarn>
+  </PropertyGroup>
+</Project>

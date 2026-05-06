@@ -265,7 +265,7 @@ public partial class Driver
         },
         Experimental = new Dictionary<string, JToken>()
         {
-            {"dreammaker", JToken.Parse("{\"objectTree\": true, \"objectTree2\": true}") }
+            {"dreammaker", JToken.Parse("{\"objectTree\": true}") }
         }
     };
 
@@ -281,7 +281,7 @@ public partial class Driver
             .Select(a => a.Method)
             .Distinct()
             .ToArray();
-        string[] specialNotifs = ["experimental/dreammaker/objectTree2"];
+        string[] specialNotifs = ["experimental/dreammaker/objectTree"];
         string[] combinedListening = positionParamNotifs.Concat(specialNotifs).ToArray();
         return combinedListening;
     }

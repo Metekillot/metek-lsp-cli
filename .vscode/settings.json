@@ -1,0 +1,5 @@
+{
+  "dotnet.backgroundAnalysis.analyzerDiagnosticsScope": "fullSolution",
+  "dotnet.backgroundAnalysis.compilerDiagnosticsScope": "fullSolution",
+  "dotnet.server.sourceGeneratorExecution": "Balanced"
+}
