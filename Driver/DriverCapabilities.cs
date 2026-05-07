@@ -24,6 +24,13 @@ using OmniSharp.Extensions.JsonRpc.Serialization;
 using Newtonsoft.Json;
 using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
 using static OmniSharp.Extensions.LanguageServer.Protocol.AbstractHandlers;
+using Microsoft.IO;
+using Nerdbank.Streams;
+using System.Buffers;
+using System.Dynamic;
+using System.IO.Pipelines;
+using Microsoft.VisualBasic;
+using System.Text;
 
 public partial class Driver
 {
@@ -137,7 +144,7 @@ public partial class Driver
                     ParameterInformation = new SignatureParameterInformationCapabilityOptions { LabelOffsetSupport = true },
                     ActiveParameterSupport = true,
                 },
-//                ContextSupport = true,
+                //                ContextSupport = true,
             },
             References = new ReferenceCapability { DynamicRegistration = true },
             DocumentHighlight = new DocumentHighlightCapability { DynamicRegistration = true },
@@ -285,16 +292,48 @@ public partial class Driver
         string[] combinedListening = positionParamNotifs.Concat(specialNotifs).ToArray();
         return combinedListening;
     }
-
-    public static void ConfigureOptions(LanguageClientOptions options)
+    private StreamMap Streams { get; set; }
+    public readonly struct StreamMap
     {
+        public Stream serverOut { get; }
+        public Stream clientIn { get; }
+        public FileStream serverLog { get; }
+
+        public StreamMap(Stream _serverOut, Stream _clientIn)
+        {
+            serverOut = _serverOut;
+            serverLog = new($"server_out_{DateTime.Now:yyyy_MM_dd_HH_mm_ss}.log", FileMode.Create, FileAccess.Write, FileShare.Read);
+            clientIn = _clientIn;
+        }
+
+        public async Task HandleOutput()
+        {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = await serverOut.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            {
+                await serverLog.WriteAsync(buffer, 0, read);
+                await serverLog.FlushAsync();
+                
+                await clientIn.WriteAsync(buffer, 0, read);
+                await clientIn.FlushAsync();
+            }
+        }
+    }
+
+    public void ConfigureOptions(LanguageClientOptions options)
+    {
+        var serverOut = ServerProcess.StandardOutput.BaseStream;
+        var clientIn = new SimplexStream();
+
         options
-            .WithInput(ServerProcess.StandardOutput.BaseStream)
+            .WithInput(clientIn)
             .WithOutput(ServerProcess.StandardInput.BaseStream)
             .WithRootUri(ProjectRoot)
             .WithClientInfo(new ClientInfo { Name = "LspCLIWrapper", Version = "0.1" })
             .WithClientCapabilities(BuildClientCapabilities());
 
+        Streams = new StreamMap(serverOut, clientIn);
 
         foreach (var method in ServerNotificationMethods)
         {

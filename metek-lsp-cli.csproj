@@ -6,9 +6,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <OutputPath>pwsh_handles/lib</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>0</WarningLevel>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -18,17 +15,21 @@
   <ItemGroup>
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/Client/Client.csproj" />
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/Protocol/Protocol.csproj" />
-    <ProjectReference
-      Include="./lib/csharp-language-server-protocol/src/JsonRpc.Generators/JsonRpc.Generators.csproj"
-      OutputItemType="Analyzer"
-      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="./lib/csharp-language-server-protocol/src/JsonRpc.Generators/JsonRpc.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <Compile Remove="lib/**/*.cs" />
     <None Remove="lib/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MessagePack" Version="3.1.4" />
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
+    <PackageReference Include="Nerdbank.Streams" Version="2.13.16" />
   </ItemGroup>
+
+  <Target Name="CopyToPwshHandles" AfterTargets="Build">
+    <Copy SourceFiles="@(ReferenceCopyLocalPaths)" DestinationFolder="pwsh_handles/lib" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFiles="pwsh_handles/lib/$(AssemblyName).dll" SkipUnchangedFiles="true" />
+  </Target>
 
   <Target Name="FullClean" AfterTargets="Clean">
     <RemoveDir Directories="$(BaseIntermediateOutputPath)" />

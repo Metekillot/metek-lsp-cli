@@ -21,34 +21,19 @@ class ConfigInformation {
         $this._AdditionalArguments   = $additionalArgs
     }
 }
-if ((-not $ProjectRoot -or -not $LanguageServerCommand) -and -not $UsePreviousConfiguration) {
+if ((-not $ProjectRoot -or -not $LanguageServerCommand)) {
     $Missing = @()
     if (-not $ProjectRoot)           { $Missing = $Missing + '$ProjectRoot' }
     if (-not $LanguageServerCommand) { $Missing = $Missing + '$LanguageServerCommand' }
     throw "Missing required parameters: $($Missing -join ',') || Did you mean to use -UsePreviousConfiguration?"
 }
 
-$PreviousConfigFile = "$PSScriptRoot/PreviousDriverRefreshConfig.cli_xml"
-
-[ConfigInformation]$Config = $null
-if ($UsePreviousConfiguration) {
-    if (![System.IO.Path]::Exists($PreviousConfigFile)) {
-        throw ('$UsePreviousConfiguration was enabled, but there was no file present at ' + $PreviousConfigFile)
-    }
-    # I am overriding your ErrorPreference, pray I do not override further
-    try { $Config = Import-Clixml -Path $PreviousConfigFile }
-    catch { throw $_ }
-} else {
-    $Config = [ConfigInformation]::new($ProjectRoot, $LanguageServerCommand, $AdditionalArguments)
-    $Config | Export-Clixml -Path $PreviousConfigFile
-}
-
-dotnet clean $slnx
+rm -rf "$PSScriptRoot/lib/*"
 if ($DebugConfig) {
-    dotnet build $slnx -v q -c Debug --ucr
+    dotnet build $slnx -c Debug --ucr
 }
 else {
-    dotnet build $slnx -v q -c Release --ucr
+    dotnet build $slnx -c Release --ucr
 }
 Add-Type -Path ./lib/metek-lsp-cli.dll
 $Global:driver = [driver]::new($Config._ProjectRoot, $Config._LanguageServerCommand, $Config._AdditionalArguments)

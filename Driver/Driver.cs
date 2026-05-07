@@ -60,25 +60,24 @@ public static class FreeAsInFreedom
 }
 public partial class Driver
 {
-    public static Uri ProjectRoot { get; set; } = null;
-    public static DirectoryInfo RootDirectory { get; set; } = null;
-    public static string RootPath { get; set; } = null;
+    public Uri ProjectRoot { get; set; } = null;
+    public DirectoryInfo RootDirectory { get; set; } = null;
+    public string RootPath { get; set; } = null;
     public string ServerBinary { get; set; } = null;
     public string[]? ServerArgs { get; set; } = null;
 
-    public static Process ServerProcess { get; set; } = null!;
-    public static LanguageClient ClientInterface { get; set; } = null!;
-    public LanguageClient cI => Driver.ClientInterface;
-    public static Dictionary<string, List<Notification>> Notifications { get; } = new();
-    public Dictionary<string, List<Notification>> notif => Driver.Notifications;
+    public Process ServerProcess { get; set; } = null!;
+    public LanguageClient ClientInterface { get; set; } = null!;
+    public LanguageClient cI => ClientInterface;
+    public Dictionary<string, List<Notification>> Notifications { get; } = new();
     public Driver(string rootPath, string serverBinary, string[]? serverArgs = null)
     {
         FreeAsInFreedom.LicenseNotice();
         try
         {
-            Driver.RootPath = Path.GetFullPath(rootPath);
-            Driver.RootDirectory = new DirectoryInfo(rootPath);
-            Driver.ProjectRoot = new Uri(Driver.RootPath);
+            RootPath = Path.GetFullPath(rootPath);
+            RootDirectory = new DirectoryInfo(rootPath);
+            ProjectRoot = new Uri(RootPath);
             ServerBinary = serverBinary;
             if (serverArgs is not null)
             {
@@ -99,6 +98,7 @@ public partial class Driver
     {
         ServerProcess = StartServerProcess();
         ClientInterface = LanguageClient.Create(ConfigureOptions);
+        var _ = Task.Run(() => Streams.HandleOutput());
         await ClientInterface.Initialize(CancellationToken.None);
         SetupRequests();
     }
@@ -115,7 +115,7 @@ public partial class Driver
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = Driver.RootPath
+                WorkingDirectory = RootPath
             }
         };
         process.Start();
@@ -167,7 +167,7 @@ public partial class Driver
 
     public void OpenDocument(string path)
     {
-        var fullPath = Path.GetFullPath(path, Driver.RootPath);
+        var fullPath = Path.GetFullPath(path, RootPath);
 
         var uri = DocumentUri.FromFileSystemPath(fullPath);
         var document = new TextDocumentItem

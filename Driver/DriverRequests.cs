@@ -34,16 +34,41 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using static OmniSharp.Extensions.JsonRpc.DelegatingHandlers;
 using static OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
+using MediatR;
+using MediatR.Wrappers;
+using System.Collections.Immutable;
 
+public static class AST
+{
+    public const string Method = "textDocument/ast";
+}
+
+public record ASTParams
+{
+    public TextDocumentIdentifier textDocument;
+    public OmniSharp.Extensions.LanguageServer.Protocol.Models.Range range;
+    public ASTParams(
+        string path,
+        int startLine,
+        int startCharacter,
+        int endLine,
+        int endCharacter
+    )
+    {
+        textDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(path));
+        range = new(startLine, startCharacter, endLine, endCharacter);
+    }
+}
 public partial class Driver
 {
     public TDXTable TDX { get; set; } = null;
     public DOCTable DOC { get; set; } = null;
     public WSPTable WSP { get; set; } = null;
 
-    public class TokenDecoder
+    public DriverResults Results = new();
+    public class TokenDecoder(Driver _driver)
     {
-        public SemanticTokensLegend _legend => Driver.ClientInterface.ServerSettings.Capabilities.SemanticTokensProvider.Legend;
+        public SemanticTokensLegend _legend => _driver.ClientInterface.ServerSettings.Capabilities.SemanticTokensProvider.Legend;
         public List<SemanticTokenItem> DecodeTokens(SemanticTokens tokens)
         {
             return DecodeTokens(tokens, this._legend);
@@ -113,135 +138,119 @@ public partial class Driver
     public void SetupRequests()
     {
         Console.WriteLine("Configuring Requests.");
-        TDX = new TDXTable();
-        DOC = new DOCTable();
-        WSP = new WSPTable();
-        Decoder = new TokenDecoder();
+        TDX = new TDXTable(this);
+        DOC = new DOCTable(this);
+        WSP = new WSPTable(this);
+        Decoder = new TokenDecoder(this);
     }
-}
-
-public abstract class RequestTable
-{
-    public LanguageClient client => Driver.ClientInterface;
-}
-
-public static class AST
-{
-    public const string Method = "textDocument/ast";
-}
-
-public record ASTParams
-{
-    public TextDocumentIdentifier textDocument;
-    public OmniSharp.Extensions.LanguageServer.Protocol.Models.Range range;
-    public ASTParams(
-        string path,
-        int startLine,
-        int startCharacter,
-        int endLine,
-        int endCharacter
-    )
+    public readonly struct DriverResults()
     {
-        textDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(path, Driver.RootPath));
-        range = new(startLine, startCharacter, endLine, endCharacter);
+        public readonly SortedDictionary<string, WorkspaceSymbol[]> WorkspaceSymbols = [];
+        internal readonly WorkspaceSymbol[] NoneWorkspaceSymbols = Array.Empty<WorkspaceSymbol>();
+
     }
 }
 
-public class DOCTable : RequestTable
+public abstract class RequestTable(Driver _driver)
 {
+    protected LanguageClient client => driver.ClientInterface;
+    protected Driver driver => _driver;
+}
 
+public class DOCTable(Driver _driver) : RequestTable(_driver)
+{
     public Task<SymbolInformationOrDocumentSymbolContainer?> DocumentSymbol(string fileName)
         => client.RequestDocumentSymbol(new DocumentSymbolParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath))
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath))
         }).AsTask();
     public Task<SemanticTokens?> SemanticTokensRange(string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
     => client.RequestSemanticTokensRange(new SemanticTokensRangeParams
     {
-        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
         Range = new(startLine, startCharacter, endLine, endCharacter)
     }).AsTask();
     public Task<SemanticTokens?> SemanticTokensFull(string fileName)
     => client.RequestSemanticTokensFull(new SemanticTokensParams
     {
-        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath))
+        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath))
     }).AsTask();
     public Task<Container<FoldingRange>?> FoldingRange(string fileName)
     => client.RequestFoldingRange(new FoldingRangeRequestParam
     {
-        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath))
+        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath))
     }).AsTask();
 }
 
-public class TDXTable : RequestTable
+public class TDXTable(Driver _driver) : RequestTable(_driver)
 {
     public Task<Container<CallHierarchyItem>?> CallHierarchyPrepare(string fileName, int line, int character)
         => client.RequestCallHierarchyPrepare(new CallHierarchyPrepareParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         }).AsTask();
 
     public Task<CompletionList> Completion(string fileName, int line, int character)
         => client.RequestCompletion(new CompletionParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character),
         }).AsTask();
 
     public Task<LocationOrLocationLinks?> Declaration(string fileName, int line, int character)
         => client.RequestDeclaration(new DeclarationParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         }).AsTask();
 
     public Task<LocationOrLocationLinks?> Definition(string fileName, int line, int character)
         => client.RequestDefinition(new DefinitionParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         }).AsTask();
 
     public Task<DocumentHighlightContainer?> DocumentHighlight(string fileName, int line, int character)
         => client.RequestDocumentHighlight(new DocumentHighlightParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         }).AsTask();
 
     public Task<Hover?> Hover(string fileName, int line, int character)
         => client.RequestHover(new HoverParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         });
 
     public Task<LocationOrLocationLinks?> Implementation(string fileName, int line, int character)
         => client.RequestImplementation(new ImplementationParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         }).AsTask();
 
     public Task<LinkedEditingRanges> LinkedEditingRange(string fileName, int line, int character)
         => client.RequestLinkedEditingRange(new LinkedEditingRangeParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         });
 
     public Task<Container<Moniker>?> Monikers(string fileName, int line, int character)
         => client.RequestMonikers(new MonikerParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         }).AsTask();
 
     public Task<LocationContainer?> References(string fileName, int line, int character)
         => client.RequestReferences(new ReferenceParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character),
             Context = new ReferenceContext { IncludeDeclaration = false }
         }).AsTask();
@@ -249,30 +258,41 @@ public class TDXTable : RequestTable
     public Task<SignatureHelp?> SignatureHelp(string fileName, int line, int character)
         => client.RequestSignatureHelp(new SignatureHelpParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character),
         });
 
     public Task<LocationOrLocationLinks?> TypeDefinition(string fileName, int line, int character)
         => client.RequestTypeDefinition(new TypeDefinitionParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         }).AsTask();
 
     public Task<Container<TypeHierarchyItem>?> TypeHierarchyPrepare(string fileName, int line, int character)
         => client.RequestTypeHierarchyPrepare(new TypeHierarchyPrepareParams
         {
-            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, Driver.RootPath)),
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
         }).AsTask();
 }
 
-public class WSPTable : RequestTable
+public class WSPTable(Driver _driver) : RequestTable(_driver)
 {
-    public Container<WorkspaceSymbol>? WorkspaceSymbols(string query)
-        => client.RequestWorkspaceSymbols(new WorkspaceSymbolParams
+
+    public async Task WorkspaceSymbols(string query)
+    {
+        var req = await client.RequestWorkspaceSymbols(new WorkspaceSymbolParams
         {
             Query = query
         });
+        if (req is null)
+        {
+            var _result = driver.Results.NoneWorkspaceSymbols;
+            driver.Results.WorkspaceSymbols[query] = _result;
+            return;
+        }
+        driver.Results.WorkspaceSymbols[query] = req.ToArray();
+        
+    }
 }
