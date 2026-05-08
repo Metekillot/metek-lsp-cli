@@ -55,46 +55,30 @@ public record ObjectTreeType(
 )
 {
     public override string ToString()
-{
-    return JsonSerializer.Serialize(this, SourceGenerationContext.Default.ObjectTreeType);
+    {
+        return JsonSerializer.Serialize(this, SourceGenerationContext.Default.ObjectTreeType);
+    }
 }
 
-}
-
-public record ObjectTreeVar
+public record ObjectTreeVar(
+    string name,
+    SymbolKind kind,
+    Location? location,
+    bool is_declaration)
 {
-    [System.Text.Json.Serialization.JsonRequired]
-    public string name;
-
-    [System.Text.Json.Serialization.JsonRequired]
-    public SymbolKind kind;
-
-    [System.Text.Json.Serialization.JsonRequired]
-    public Location? location;
-
-    [System.Text.Json.Serialization.JsonRequired]
-    public bool is_declaration;
-
     public override string ToString()
     {
         return JsonSerializer.Serialize(this, SourceGenerationContext.Default.ObjectTreeVar);
     }
 }
 
-public record ObjectTreeProc
+public record ObjectTreeProc(
+    string name,
+    SymbolKind kind,
+    Location? location,
+    bool? is_verb
+)
 {
-    [System.Text.Json.Serialization.JsonRequired]
-    public string name;
-
-    [System.Text.Json.Serialization.JsonRequired]
-    public SymbolKind kind;
-
-    [System.Text.Json.Serialization.JsonRequired]
-    public Location? location;
-
-    [System.Text.Json.Serialization.JsonRequired]
-    public bool? is_verb;
-
     public override string ToString()
     {
         return JsonSerializer.Serialize(this, SourceGenerationContext.Default.ObjectTreeProc);
