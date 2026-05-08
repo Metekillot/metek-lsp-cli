@@ -12,12 +12,19 @@
 * You should have received a copy of the GNU Lesser General Public License along with metek-lsp-cli. If not, see <https://www.gnu.org/licenses/>. 
 */
 
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+
 namespace Metek.LspCli;
+
 public static class AST
 {
     public const string Method = "textDocument/ast";
@@ -117,7 +124,7 @@ public partial class Driver
     public TokenDecoder Decoder = null;
     public void SetupRequests()
     {
-        Console.WriteLine("Configuring Requests.");
+        System.Console.WriteLine("Configuring Requests.");
         TDX = new TDXTable(this);
         DOC = new DOCTable(this);
         WSP = new WSPTable(this);
@@ -127,7 +134,19 @@ public partial class Driver
     {
         public readonly SortedDictionary<string, WorkspaceSymbol[]> WorkspaceSymbols = [];
         public readonly SortedDictionary<string, ObjectTreeType> ObjectTrees = [];
-        internal readonly WorkspaceSymbol[] NoneWorkspaceSymbols = Array.Empty<WorkspaceSymbol>();
+        public readonly SortedDictionary<string, SymbolInformationOrDocumentSymbol[]> DocumentSymbols = [];
+        public readonly SortedDictionary<string, SemanticTokens[]> SemanticTokens = [];
+        public readonly SortedDictionary<string, FoldingRange[]> FoldingRanges = [];
+        public readonly SortedDictionary<string, CallHierarchyItem[]> CallHierarchyItems = [];
+        public readonly SortedDictionary<string, CompletionItem[]> Completions = [];
+        public readonly SortedDictionary<string, LocationOrLocationLink[]> Declarations = [];
+        public readonly SortedDictionary<string, LocationOrLocationLink[]> Definitions = [];
+        public readonly SortedDictionary<string, DocumentHighlight[]> DocumentHighlights = [];
+        public readonly SortedDictionary<string, LocationOrLocationLink[]> Implementations = [];
+        public readonly SortedDictionary<string, Moniker[]> Monikers = [];
+        public readonly SortedDictionary<string, Location[]> References = [];
+        public readonly SortedDictionary<string, LocationOrLocationLink[]> TypeDefinitions = [];
+        public readonly SortedDictionary<string, TypeHierarchyItem[]> TypeHierarchyItems = [];
 
     }
 }
@@ -140,65 +159,104 @@ public abstract class RequestTable(Driver _driver)
 
 public class DOCTable(Driver _driver) : RequestTable(_driver)
 {
-    public Task<SymbolInformationOrDocumentSymbolContainer?> DocumentSymbol(string fileName)
-        => client.RequestDocumentSymbol(new DocumentSymbolParams
+    public async Task DocumentSymbol(string fileName)
+    {
+        var req = await client.RequestDocumentSymbol(new DocumentSymbolParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath))
-        }).AsTask();
-    public Task<SemanticTokens?> SemanticTokensRange(string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
-    => client.RequestSemanticTokensRange(new SemanticTokensRangeParams
+        });
+        if (req is null) return;
+        driver.Results.DocumentSymbols[fileName] = req.ToArray();
+    }
+
+    public async Task SemanticTokensRange(string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
     {
-        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
-        Range = new(startLine, startCharacter, endLine, endCharacter)
-    }).AsTask();
-    public Task<SemanticTokens?> SemanticTokensFull(string fileName)
-    => client.RequestSemanticTokensFull(new SemanticTokensParams
+        var req = await client.RequestSemanticTokensRange(new SemanticTokensRangeParams
+        {
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
+            Range = new(startLine, startCharacter, endLine, endCharacter)
+        });
+        if (req is null) return;
+        driver.Results.SemanticTokens[$"{fileName}:{startLine}:{startCharacter}:{endLine}:{endCharacter}"] = new[] { req };
+    }
+
+    public async Task SemanticTokensFull(string fileName)
     {
-        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath))
-    }).AsTask();
-    public Task<Container<FoldingRange>?> FoldingRange(string fileName)
-    => client.RequestFoldingRange(new FoldingRangeRequestParam
+        var req = await client.RequestSemanticTokensFull(new SemanticTokensParams
+        {
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath))
+        });
+        if (req is null) return;
+        driver.Results.SemanticTokens[fileName] = new[] { req };
+    }
+
+    public async Task FoldingRange(string fileName)
     {
-        TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath))
-    }).AsTask();
+        var req = await client.RequestFoldingRange(new FoldingRangeRequestParam
+        {
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath))
+        });
+        if (req is null) return;
+        driver.Results.FoldingRanges[fileName] = req.ToArray();
+    }
 }
 
 public class TDXTable(Driver _driver) : RequestTable(_driver)
 {
-    public Task<Container<CallHierarchyItem>?> CallHierarchyPrepare(string fileName, int line, int character)
-        => client.RequestCallHierarchyPrepare(new CallHierarchyPrepareParams
+    public async Task CallHierarchyPrepare(string fileName, int line, int character)
+    {
+        var req = await client.RequestCallHierarchyPrepare(new CallHierarchyPrepareParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.CallHierarchyItems[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 
-    public Task<CompletionList> Completion(string fileName, int line, int character)
-        => client.RequestCompletion(new CompletionParams
+    public async Task Completion(string fileName, int line, int character)
+    {
+        var req = await client.RequestCompletion(new CompletionParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character),
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.Completions[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 
-    public Task<LocationOrLocationLinks?> Declaration(string fileName, int line, int character)
-        => client.RequestDeclaration(new DeclarationParams
+    public async Task Declaration(string fileName, int line, int character)
+    {
+        var req = await client.RequestDeclaration(new DeclarationParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.Declarations[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 
-    public Task<LocationOrLocationLinks?> Definition(string fileName, int line, int character)
-        => client.RequestDefinition(new DefinitionParams
+    public async Task Definition(string fileName, int line, int character)
+    {
+        var req = await client.RequestDefinition(new DefinitionParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.Definitions[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 
-    public Task<DocumentHighlightContainer?> DocumentHighlight(string fileName, int line, int character)
-        => client.RequestDocumentHighlight(new DocumentHighlightParams
+    public async Task DocumentHighlight(string fileName, int line, int character)
+    {
+        var req = await client.RequestDocumentHighlight(new DocumentHighlightParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.DocumentHighlights[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 
     public Task<Hover?> Hover(string fileName, int line, int character)
         => client.RequestHover(new HoverParams
@@ -207,12 +265,16 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
             Position = (line, character)
         });
 
-    public Task<LocationOrLocationLinks?> Implementation(string fileName, int line, int character)
-        => client.RequestImplementation(new ImplementationParams
+    public async Task Implementation(string fileName, int line, int character)
+    {
+        var req = await client.RequestImplementation(new ImplementationParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.Implementations[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 
     public Task<LinkedEditingRanges> LinkedEditingRange(string fileName, int line, int character)
         => client.RequestLinkedEditingRange(new LinkedEditingRangeParams
@@ -221,20 +283,28 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
             Position = (line, character)
         });
 
-    public Task<Container<Moniker>?> Monikers(string fileName, int line, int character)
-        => client.RequestMonikers(new MonikerParams
+    public async Task Monikers(string fileName, int line, int character)
+    {
+        var req = await client.RequestMonikers(new MonikerParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.Monikers[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 
-    public Task<LocationContainer?> References(string fileName, int line, int character)
-        => client.RequestReferences(new ReferenceParams
+    public async Task References(string fileName, int line, int character)
+    {
+        var req = await client.RequestReferences(new ReferenceParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character),
             Context = new ReferenceContext { IncludeDeclaration = false }
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.References[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 
     public Task<SignatureHelp?> SignatureHelp(string fileName, int line, int character)
         => client.RequestSignatureHelp(new SignatureHelpParams
@@ -243,19 +313,27 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
             Position = (line, character),
         });
 
-    public Task<LocationOrLocationLinks?> TypeDefinition(string fileName, int line, int character)
-        => client.RequestTypeDefinition(new TypeDefinitionParams
+    public async Task TypeDefinition(string fileName, int line, int character)
+    {
+        var req = await client.RequestTypeDefinition(new TypeDefinitionParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.TypeDefinitions[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 
-    public Task<Container<TypeHierarchyItem>?> TypeHierarchyPrepare(string fileName, int line, int character)
-        => client.RequestTypeHierarchyPrepare(new TypeHierarchyPrepareParams
+    public async Task TypeHierarchyPrepare(string fileName, int line, int character)
+    {
+        var req = await client.RequestTypeHierarchyPrepare(new TypeHierarchyPrepareParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
-        }).AsTask();
+        });
+        if (req is null) return;
+        driver.Results.TypeHierarchyItems[$"{fileName}:{line}:{character}"] = req.ToArray();
+    }
 }
 
 public class WSPTable(Driver _driver) : RequestTable(_driver)
@@ -268,8 +346,6 @@ public class WSPTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null)
         {
-            var _result = driver.Results.NoneWorkspaceSymbols;
-            driver.Results.WorkspaceSymbols[query] = _result;
             return;
         }
         driver.Results.WorkspaceSymbols[query] = req.ToArray();
