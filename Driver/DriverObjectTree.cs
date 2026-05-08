@@ -17,7 +17,8 @@ using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.JsonRpc.Generation;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
-using System.Text.Json;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 
 namespace Metek.LspCli;
@@ -32,43 +33,49 @@ public class QueryObjectTreeParams : IRequest<ObjectTreeType>
     public string path;
 }
 
+[System.Text.Json.Serialization.JsonSerializable(typeof(ObjectTreeType))]
 public record ObjectTreeType
 {
+    [System.Text.Json.Serialization.JsonRequired]
     public string name;
+    [System.Text.Json.Serialization.JsonRequired]
     public SymbolKind kind;
+    [System.Text.Json.Serialization.JsonRequired]
     public Location? location;
+    [System.Text.Json.Serialization.JsonRequired]
     public ObjectTreeVar[] vars;
+    [System.Text.Json.Serialization.JsonRequired]
     public ObjectTreeProc[] procs;
+    [System.Text.Json.Serialization.JsonRequired]
     public ObjectTreeType[] children;
+    [System.Text.Json.Serialization.JsonRequired]
     public long n_vars;
+    [System.Text.Json.Serialization.JsonRequired]
     public long n_procs;
+    [System.Text.Json.Serialization.JsonRequired]
     public long n_children;
-    public override string ToString()
-    {
-        return JsonSerializer.Serialize(this);
-    }
 }
 
 public record ObjectTreeVar
 {
+    [System.Text.Json.Serialization.JsonRequired]
     public string name;
+    [System.Text.Json.Serialization.JsonRequired]
     public SymbolKind kind;
+    [System.Text.Json.Serialization.JsonRequired]
     public Location? location;
+    [System.Text.Json.Serialization.JsonRequired]
     public bool is_declaration;
-    public override string ToString()
-    {
-        return JsonSerializer.Serialize(this);
-    }
 }
 
 public record ObjectTreeProc
 {
+    [System.Text.Json.Serialization.JsonRequired]
     public string name;
+    [System.Text.Json.Serialization.JsonRequired]
     public SymbolKind kind;
+    [System.Text.Json.Serialization.JsonRequired]
     public Location? location;
+    [System.Text.Json.Serialization.JsonRequired]
     public bool? is_verb;
-    public override string ToString()
-    {
-        return JsonSerializer.Serialize(this);
-    }
 }
