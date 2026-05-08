@@ -101,20 +101,35 @@ public partial class Driver : IDisposable, IAsyncDisposable
         Dispose();
     }
 
-    public Driver(string rootPath, string serverBinary, string[]? serverArgs = null)
+    public static async Task<Driver> CreateAsync(string rootPath, string serverBinary, string[]? serverArgs = null)
     {
         FreeAsInFreedom.LicenseNotice();
+        var driver = new Driver(rootPath, serverBinary, serverArgs, skipInitialize: true);
+        await driver.Initialize();
+        return driver;
+    }
+
+    public Driver(string rootPath, string serverBinary, string[]? serverArgs = null) 
+        : this(rootPath, serverBinary, serverArgs, skipInitialize: false)
+    {
+    }
+
+    private Driver(string rootPath, string serverBinary, string[]? serverArgs, bool skipInitialize)
+    {
+        if (!skipInitialize) FreeAsInFreedom.LicenseNotice();
+        
         try
         {
             RootPath = Path.GetFullPath(rootPath);
             RootDirectory = new DirectoryInfo(rootPath);
             ProjectRoot = new Uri(RootPath);
             ServerBinary = serverBinary;
-            if (serverArgs is not null)
+            ServerArgs = serverArgs;
+
+            if (!skipInitialize)
             {
-                ServerArgs = serverArgs;
+                Initialize().GetAwaiter().GetResult();
             }
-            Initialize().GetAwaiter().GetResult();
         }
         catch (Exception e)
         {
