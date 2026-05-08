@@ -103,7 +103,6 @@ public partial class Driver : IDisposable, IAsyncDisposable
 
     public static async Task<Driver> CreateAsync(string rootPath, string serverBinary, string[]? serverArgs = null)
     {
-        FreeAsInFreedom.LicenseNotice();
         var driver = new Driver(rootPath, serverBinary, serverArgs, skipInitialize: true);
         await driver.Initialize();
         return driver;
@@ -115,9 +114,7 @@ public partial class Driver : IDisposable, IAsyncDisposable
     }
 
     private Driver(string rootPath, string serverBinary, string[]? serverArgs, bool skipInitialize)
-    {
-        if (!skipInitialize) FreeAsInFreedom.LicenseNotice();
-        
+    {   
         try
         {
             RootPath = Path.GetFullPath(rootPath);
@@ -142,6 +139,7 @@ public partial class Driver : IDisposable, IAsyncDisposable
 
     public async Task Initialize()
     {
+        FreeAsInFreedom.LicenseNotice();
         ServerProcess = StartServerProcess();
         ClientInterface = LanguageClient.Create(ConfigureOptions);
 #if DUAL_STREAM
