@@ -12,12 +12,12 @@
 * You should have received a copy of the GNU Lesser General Public License along with metek-lsp-cli. If not, see <https://www.gnu.org/licenses/>. 
 */
 
+using System.Text.Json.Serialization;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.JsonRpc.Generation;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
-using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 
@@ -32,28 +32,46 @@ public class QueryObjectTreeParams : IRequest<ObjectTreeType>
 {
     public string path;
 }
-
-[System.Text.Json.Serialization.JsonSerializable(typeof(ObjectTreeType))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(ObjectTreeType))]
+[JsonSerializable(typeof(ObjectTreeVar))]
+[JsonSerializable(typeof(ObjectTreeProc))]
+internal partial class SourceGenerationContext : JsonSerializerContext
+{
+}
 public record ObjectTreeType
 {
     [System.Text.Json.Serialization.JsonRequired]
     public string name;
+
     [System.Text.Json.Serialization.JsonRequired]
     public SymbolKind kind;
+
     [System.Text.Json.Serialization.JsonRequired]
     public Location? location;
+
     [System.Text.Json.Serialization.JsonRequired]
     public ObjectTreeVar[] vars;
+
     [System.Text.Json.Serialization.JsonRequired]
     public ObjectTreeProc[] procs;
+
     [System.Text.Json.Serialization.JsonRequired]
     public ObjectTreeType[] children;
+
     [System.Text.Json.Serialization.JsonRequired]
     public long n_vars;
+
     [System.Text.Json.Serialization.JsonRequired]
     public long n_procs;
+
     [System.Text.Json.Serialization.JsonRequired]
     public long n_children;
+
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this, SourceGenerationContext.Default.ObjectTreeType);
+    }
 }
 
 public record ObjectTreeVar
@@ -66,8 +84,11 @@ public record ObjectTreeVar
     public Location? location;
     [System.Text.Json.Serialization.JsonRequired]
     public bool is_declaration;
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this, SourceGenerationContext.Default.ObjectTreeVar);
+    }
 }
-
 public record ObjectTreeProc
 {
     [System.Text.Json.Serialization.JsonRequired]
@@ -78,4 +99,8 @@ public record ObjectTreeProc
     public Location? location;
     [System.Text.Json.Serialization.JsonRequired]
     public bool? is_verb;
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this, SourceGenerationContext.Default.ObjectTreeProc);
+    }
 }
