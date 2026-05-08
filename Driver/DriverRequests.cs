@@ -12,31 +12,11 @@
 * You should have received a copy of the GNU Lesser General Public License along with metek-lsp-cli. If not, see <https://www.gnu.org/licenses/>. 
 */
 
-using System.Dynamic;
-using System.Reactive;
-using System.Threading.Tasks.Dataflow;
-using OmniSharp.Extensions.JsonRpc;
-using OmniSharp.Extensions.JsonRpc.Generation;
 using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol;
-using OmniSharp.Extensions.LanguageServer.Protocol.Client;
-using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using OmniSharp.Extensions.LanguageServer.Protocol.Document;
-using OmniSharp.Extensions.LanguageServer.Protocol;
-using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Generation;
-using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Progress;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
-using static OmniSharp.Extensions.JsonRpc.DelegatingHandlers;
-using static OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
-using MediatR;
-using MediatR.Wrappers;
-using System.Collections.Immutable;
 namespace Metek.LspCli;
 public static class AST
 {
@@ -146,6 +126,7 @@ public partial class Driver
     public readonly struct DriverResults()
     {
         public readonly SortedDictionary<string, WorkspaceSymbol[]> WorkspaceSymbols = [];
+        public readonly SortedDictionary<string, ObjectTreeType> ObjectTrees = [];
         internal readonly WorkspaceSymbol[] NoneWorkspaceSymbols = Array.Empty<WorkspaceSymbol>();
 
     }
@@ -279,7 +260,6 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
 
 public class WSPTable(Driver _driver) : RequestTable(_driver)
 {
-
     public async Task WorkspaceSymbols(string query)
     {
         var req = await client.RequestWorkspaceSymbols(new WorkspaceSymbolParams
@@ -294,5 +274,10 @@ public class WSPTable(Driver _driver) : RequestTable(_driver)
         }
         driver.Results.WorkspaceSymbols[query] = req.ToArray();
         
+    }
+    public async Task QueryObjectTree(string _path)
+    {
+        var req = await client.RequestQueryObjectTree(new QueryObjectTreeParams{path =  _path}, CancellationToken.None);
+        driver.Results.ObjectTrees[_path] = req;
     }
 }
