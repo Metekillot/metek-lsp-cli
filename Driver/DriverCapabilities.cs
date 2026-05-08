@@ -289,7 +289,7 @@ public partial class Driver
     }
 #if DUAL_STREAM
     private StreamMap Streams { get; set; }
-    public readonly struct StreamMap
+    public readonly struct StreamMap : IDisposable, IAsyncDisposable
     {
         public Stream serverOut { get; }
         public Stream clientIn { get; }
@@ -314,6 +314,18 @@ public partial class Driver
                 await clientIn.WriteAsync(buffer, 0, read);
                 await clientIn.FlushAsync();
             }
+        }
+
+        public void Dispose()
+        {
+            serverLog?.Dispose();
+            clientIn?.Dispose();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (serverLog != null) await serverLog.DisposeAsync();
+            if (clientIn != null) await clientIn.DisposeAsync();
         }
     }
 #endif

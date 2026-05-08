@@ -59,7 +59,7 @@ public static class FreeAsInFreedom
     }
 }
 namespace  Metek.LspCli {
-public partial class Driver
+public partial class Driver : IDisposable, IAsyncDisposable
 {
     public Uri ProjectRoot { get; set; } = null;
     public DirectoryInfo RootDirectory { get; set; } = null;
@@ -71,6 +71,36 @@ public partial class Driver
     public LanguageClient ClientInterface { get; set; } = null!;
     public LanguageClient cI => ClientInterface;
     public Dictionary<string, List<Notification>> Notifications { get; } = new();
+
+    public void Dispose()
+    {
+        ClientInterface?.Dispose();
+        if (ServerProcess != null)
+        {
+            if (!ServerProcess.HasExited)
+            {
+                ServerProcess.Kill();
+            }
+            ServerProcess.Dispose();
+        }
+#if DUAL_STREAM
+        Streams.Dispose();
+#endif
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (ClientInterface != null)
+        {
+            await ClientInterface.Shutdown();
+        }
+#if DUAL_STREAM
+        await Streams.DisposeAsync();
+#endif
+        Dispose();
+    }
+
     public Driver(string rootPath, string serverBinary, string[]? serverArgs = null)
     {
         FreeAsInFreedom.LicenseNotice();
