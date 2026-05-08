@@ -1,3 +1,4 @@
 [submodule "lib/csharp-language-server-protocol"]
 	path = lib/csharp-language-server-protocol
 	url = https://github.com/Metekillot/csharp-language-server-protocol
+	branch = metek-lsp-cli-submodule
