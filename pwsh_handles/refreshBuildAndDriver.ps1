@@ -10,22 +10,11 @@ param(
 )
 $Script:slnx = "$PSScriptRoot/../metek-lsp-cli.slnx"
 
-class ConfigInformation {
-    [string]   $_ProjectRoot
-    [string]   $_LanguageServerCommand
-    [string[]] $_AdditionalArguments
-
-    ConfigInformation([string]$root, [string]$command, [string[]]$additionalArgs) {
-        $this._ProjectRoot           = $root
-        $this._LanguageServerCommand = $command
-        $this._AdditionalArguments   = $additionalArgs
-    }
-}
 if ((-not $ProjectRoot -or -not $LanguageServerCommand)) {
     $Missing = @()
     if (-not $ProjectRoot)           { $Missing = $Missing + '$ProjectRoot' }
     if (-not $LanguageServerCommand) { $Missing = $Missing + '$LanguageServerCommand' }
-    throw "Missing required parameters: $($Missing -join ',') || Did you mean to use -UsePreviousConfiguration?"
+    throw "Missing required parameters: $($Missing -join ',')"
 }
 
 rm -rf "$PSScriptRoot/lib/*"
@@ -36,4 +25,4 @@ else {
     dotnet build $slnx -c Release --ucr
 }
 Add-Type -Path ./lib/metek-lsp-cli.dll
-$Global:driver = [driver]::new($Config._ProjectRoot, $Config._LanguageServerCommand, $Config._AdditionalArguments)
+$Global:driver = [driver]::new($ProjectRoot, $LanguageServerCommand, $AdditionalArguments)

@@ -144,7 +144,7 @@ public partial class Driver
                     ParameterInformation = new SignatureParameterInformationCapabilityOptions { LabelOffsetSupport = true },
                     ActiveParameterSupport = true,
                 },
-                //                ContextSupport = true,
+                                ContextSupport = true,
             },
             References = new ReferenceCapability { DynamicRegistration = true },
             DocumentHighlight = new DocumentHighlightCapability { DynamicRegistration = true },
@@ -270,10 +270,7 @@ public partial class Driver
             },
             PositionEncodings = new Container<PositionEncodingKind>(PositionEncodingKind.UTF16),
         },
-        Experimental = new Dictionary<string, JToken>()
-        {
-            {"dreammaker", JToken.Parse("{\"objectTree\": true}") }
-        }
+        Experimental = {},
     };
 
     public static readonly string[] ServerNotificationMethods = DiscoverServerNotifications();
@@ -288,10 +285,9 @@ public partial class Driver
             .Select(a => a.Method)
             .Distinct()
             .ToArray();
-        string[] specialNotifs = ["experimental/dreammaker/objectTree"];
-        string[] combinedListening = positionParamNotifs.Concat(specialNotifs).ToArray();
-        return combinedListening;
+        return positionParamNotifs;
     }
+#if DUAL_STREAM
     private StreamMap Streams { get; set; }
     public readonly struct StreamMap
     {
@@ -320,20 +316,25 @@ public partial class Driver
             }
         }
     }
+#endif
 
     public void ConfigureOptions(LanguageClientOptions options)
     {
         var serverOut = ServerProcess.StandardOutput.BaseStream;
+
+#if DUAL_STREAM
         var clientIn = new SimplexStream();
+        options.WithInput(clientIn);
+        Streams = new StreamMap(serverOut, clientIn);
+#else
+        options.WithInput(serverOut);
+#endif
 
         options
-            .WithInput(clientIn)
             .WithOutput(ServerProcess.StandardInput.BaseStream)
             .WithRootUri(ProjectRoot)
             .WithClientInfo(new ClientInfo { Name = "LspCLIWrapper", Version = "0.1" })
             .WithClientCapabilities(BuildClientCapabilities());
-
-        Streams = new StreamMap(serverOut, clientIn);
 
         foreach (var method in ServerNotificationMethods)
         {

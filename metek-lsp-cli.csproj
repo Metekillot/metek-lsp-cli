@@ -12,6 +12,10 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(DualStream)' == 'true'">
+    <DefineConstants>$(DefineConstants);DUAL_STREAM</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/Client/Client.csproj" />
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/Protocol/Protocol.csproj" />

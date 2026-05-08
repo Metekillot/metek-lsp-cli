@@ -98,7 +98,9 @@ public partial class Driver
     {
         ServerProcess = StartServerProcess();
         ClientInterface = LanguageClient.Create(ConfigureOptions);
+#if DUAL_STREAM
         var _ = Task.Run(() => Streams.HandleOutput());
+#endif
         await ClientInterface.Initialize(CancellationToken.None);
         SetupRequests();
     }
