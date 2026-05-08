@@ -13,11 +13,12 @@
 */
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using System.Collections.Generic;
 using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.JsonRpc.Generation;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
+using System.Text.Json;
+
 
 namespace Metek.LspCli;
 [Parallel]
@@ -36,12 +37,16 @@ public record ObjectTreeType
     public string name;
     public SymbolKind kind;
     public Location? location;
-    public List<ObjectTreeVar> vars;
-    public List<ObjectTreeProc> procs;
-    public List<ObjectTreeType> children;
+    public ObjectTreeVar[] vars;
+    public ObjectTreeProc[] procs;
+    public ObjectTreeType[] children;
     public long n_vars;
     public long n_procs;
     public long n_children;
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this);
+    }
 }
 
 public record ObjectTreeVar
@@ -50,6 +55,10 @@ public record ObjectTreeVar
     public SymbolKind kind;
     public Location? location;
     public bool is_declaration;
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this);
+    }
 }
 
 public record ObjectTreeProc
@@ -58,4 +67,8 @@ public record ObjectTreeProc
     public SymbolKind kind;
     public Location? location;
     public bool? is_verb;
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this);
+    }
 }
