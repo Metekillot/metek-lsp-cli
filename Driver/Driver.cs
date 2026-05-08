@@ -58,6 +58,7 @@ public static class FreeAsInFreedom
         Console.Write(notice);
     }
 }
+namespace  Metek.LspCli {
 public partial class Driver
 {
     public Uri ProjectRoot { get; set; } = null;
@@ -187,4 +188,4 @@ public partial class Driver
     }
 
 
-}
+}}

@@ -37,7 +37,7 @@ using static OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 using MediatR;
 using MediatR.Wrappers;
 using System.Collections.Immutable;
-
+namespace Metek.LspCli;
 public static class AST
 {
     public const string Method = "textDocument/ast";

@@ -31,7 +31,7 @@ using System.Dynamic;
 using System.IO.Pipelines;
 using Microsoft.VisualBasic;
 using System.Text;
-
+namespace Metek.LspCli;
 public partial class Driver
 {
 
