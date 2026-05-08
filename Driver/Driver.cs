@@ -55,7 +55,7 @@ public static class FreeAsInFreedom
         =
 
         """;
-        Console.Write(notice);
+        Console.Error.Write(notice);
     }
 }
 namespace  Metek.LspCli {
