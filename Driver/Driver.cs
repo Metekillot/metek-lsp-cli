@@ -84,17 +84,13 @@ public partial class Driver : IDisposable, IAsyncDisposable
             ServerProcess.Dispose();
         }
 #if DUAL_STREAM
-        Streams.Dispose();
+        Streams?.Dispose();
 #endif
         GC.SuppressFinalize(this);
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (ClientInterface != null)
-        {
-            await ClientInterface.Shutdown();
-        }
 #if DUAL_STREAM
         await Streams.DisposeAsync();
 #endif
