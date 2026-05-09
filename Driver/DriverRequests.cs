@@ -1,16 +1,16 @@
 /*
-* Copyright (c) 2026, Joshua 'Joan Metek' Kidder
-*
-* This file is part of metek-lsp-cli,
-*
-* metek-lsp-cli is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License
-* as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-*
-* metek-lsp-cli is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-* 
-* You should have received a copy of the GNU Lesser General Public License along with metek-lsp-cli. If not, see <https://www.gnu.org/licenses/>. 
-*/
+ * Copyright (c) 2026, Joshua 'Joan Metek' Kidder
+ *
+ * This file is part of metek-lsp-cli,
+ *
+ * metek-lsp-cli is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * metek-lsp-cli is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with metek-lsp-cli. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 using System.Collections.Generic;
 using System.IO;
@@ -34,6 +34,7 @@ public record ASTParams
 {
     public TextDocumentIdentifier textDocument;
     public OmniSharp.Extensions.LanguageServer.Protocol.Models.Range range;
+
     public ASTParams(
         string path,
         int startLine,
@@ -46,6 +47,7 @@ public record ASTParams
         range = new(startLine, startCharacter, endLine, endCharacter);
     }
 }
+
 public partial class Driver
 {
     public TDXTable TDX { get; set; } = null;
@@ -53,13 +55,17 @@ public partial class Driver
     public WSPTable WSP { get; set; } = null;
 
     public DriverResults Results = new();
+
     public class TokenDecoder(Driver _driver)
     {
-        public SemanticTokensLegend _legend => _driver.ClientInterface.ServerSettings.Capabilities.SemanticTokensProvider.Legend;
+        public SemanticTokensLegend _legend =>
+            _driver.ClientInterface.ServerSettings.Capabilities.SemanticTokensProvider.Legend;
+
         public List<SemanticTokenItem> DecodeTokens(SemanticTokens tokens)
         {
             return DecodeTokens(tokens, this._legend);
         }
+
         public List<SemanticTokenItem> DecodeTokens(SemanticTokens tokens, SemanticTokensLegend legend)
         {
             var result = new List<SemanticTokenItem>();
@@ -96,6 +102,7 @@ public partial class Driver
                     Modifiers = DecodeModifiers(modifierMask, legend.TokenModifiers)
                 });
             }
+
             return result;
         }
 
@@ -109,6 +116,7 @@ public partial class Driver
                     modifiers.Add(legendModifiers.ElementAt(i));
                 }
             }
+
             return modifiers;
         }
 
@@ -121,7 +129,9 @@ public partial class Driver
             public List<string> Modifiers { get; set; }
         }
     }
+
     public TokenDecoder Decoder = null;
+
     public void SetupRequests()
     {
         System.Console.WriteLine("Configuring Requests.");
@@ -130,6 +140,7 @@ public partial class Driver
         WSP = new WSPTable(this);
         Decoder = new TokenDecoder(this);
     }
+
     public readonly struct DriverResults()
     {
         public readonly SortedDictionary<string, WorkspaceSymbol[]> WorkspaceSymbols = [];
@@ -162,8 +173,6 @@ public partial class Driver
         internal readonly Location[] NoneReferences = [];
         internal readonly LocationOrLocationLink[] NoneTypeDefinitions = [];
         internal readonly TypeHierarchyItem[] NoneTypeHierarchyItems = [];
-        
-
     }
 }
 
@@ -183,10 +192,11 @@ public class DOCTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneDocumentSymbols;
         driver.Results.DocumentSymbols[fileName] = req.ToArray();
-		return driver.Results.DocumentSymbols[fileName];
+        return driver.Results.DocumentSymbols[fileName];
     }
 
-    public async Task<SemanticTokens?> SemanticTokensRange(string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
+    public async Task<SemanticTokens?> SemanticTokensRange(string fileName, int startLine, int startCharacter,
+        int endLine, int endCharacter)
     {
         var req = await client.RequestSemanticTokensRange(new SemanticTokensRangeParams
         {
@@ -217,7 +227,7 @@ public class DOCTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneFoldingRanges;
         driver.Results.FoldingRanges[fileName] = req.ToArray();
-		return driver.Results.FoldingRanges[fileName];
+        return driver.Results.FoldingRanges[fileName];
     }
 }
 
@@ -232,7 +242,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneCallHierarchyItems;
         driver.Results.CallHierarchyItems[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.CallHierarchyItems[$"{fileName}:{line}:{character}"];
+        return driver.Results.CallHierarchyItems[$"{fileName}:{line}:{character}"];
     }
 
     public async Task<CompletionItem[]> Completion(string fileName, int line, int character)
@@ -244,7 +254,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneCompletions;
         driver.Results.Completions[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.Completions[$"{fileName}:{line}:{character}"];
+        return driver.Results.Completions[$"{fileName}:{line}:{character}"];
     }
 
     public async Task<LocationOrLocationLink[]> Declaration(string fileName, int line, int character)
@@ -256,7 +266,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneDeclarations;
         driver.Results.Declarations[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.Declarations[$"{fileName}:{line}:{character}"];
+        return driver.Results.Declarations[$"{fileName}:{line}:{character}"];
     }
 
     public async Task<LocationOrLocationLink[]> Definition(string fileName, int line, int character)
@@ -268,7 +278,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneDefinitions;
         driver.Results.Definitions[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.Definitions[$"{fileName}:{line}:{character}"];
+        return driver.Results.Definitions[$"{fileName}:{line}:{character}"];
     }
 
     public async Task<DocumentHighlight[]> DocumentHighlight(string fileName, int line, int character)
@@ -280,11 +290,12 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneDocumentHighlights;
         driver.Results.DocumentHighlights[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.DocumentHighlights[$"{fileName}:{line}:{character}"];
+        return driver.Results.DocumentHighlights[$"{fileName}:{line}:{character}"];
     }
 
     public async Task<Hover?> Hover(string fileName, int line, int character)
-    {   var req = await client.RequestHover(new HoverParams
+    {
+        var req = await client.RequestHover(new HoverParams
         {
             TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             Position = (line, character)
@@ -303,7 +314,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneImplementations;
         driver.Results.Implementations[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.Implementations[$"{fileName}:{line}:{character}"];
+        return driver.Results.Implementations[$"{fileName}:{line}:{character}"];
     }
 
     public Task<LinkedEditingRanges> LinkedEditingRange(string fileName, int line, int character)
@@ -322,7 +333,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneMonikers;
         driver.Results.Monikers[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.Monikers[$"{fileName}:{line}:{character}"];
+        return driver.Results.Monikers[$"{fileName}:{line}:{character}"];
     }
 
     public async Task<Location[]> References(string fileName, int line, int character)
@@ -335,7 +346,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneReferences;
         driver.Results.References[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.References[$"{fileName}:{line}:{character}"];
+        return driver.Results.References[$"{fileName}:{line}:{character}"];
     }
 
     public Task<SignatureHelp?> SignatureHelp(string fileName, int line, int character)
@@ -354,7 +365,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneTypeDefinitions;
         driver.Results.TypeDefinitions[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.TypeDefinitions[$"{fileName}:{line}:{character}"];
+        return driver.Results.TypeDefinitions[$"{fileName}:{line}:{character}"];
     }
 
     public async Task<TypeHierarchyItem[]> TypeHierarchyPrepare(string fileName, int line, int character)
@@ -366,7 +377,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         });
         if (req is null) return driver.Results.NoneTypeHierarchyItems;
         driver.Results.TypeHierarchyItems[$"{fileName}:{line}:{character}"] = req.ToArray();
-		return driver.Results.TypeHierarchyItems[$"{fileName}:{line}:{character}"];
+        return driver.Results.TypeHierarchyItems[$"{fileName}:{line}:{character}"];
     }
 
     public async Task<QueryAnnotationTreeResult?> AnnotationQuery(string fileName, int line, int character)
@@ -380,6 +391,7 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         {
             return null;
         }
+
         driver.Results.AnnotationTrees[$"{fileName}:{line}:{character}"] = req;
         return req;
     }
@@ -397,13 +409,24 @@ public class WSPTable(Driver _driver) : RequestTable(_driver)
         {
             return driver.Results.NoneWorkspaceSymbols;
         }
+
         driver.Results.WorkspaceSymbols[query] = req.ToArray();
-		return driver.Results.WorkspaceSymbols[query];
-        
+        return driver.Results.WorkspaceSymbols[query];
     }
+
     public async Task<ObjectTreeType> QueryObjectTree(string _path)
     {
-        var req = await client.RequestQueryObjectTree(new QueryObjectTreeParams{path =  _path}, CancellationToken.None);
+        var req = await client.RequestQueryObjectTree(new QueryObjectTreeParams { path = _path },
+            CancellationToken.None);
+        driver.Results.ObjectTrees[_path] = req;
+        return req;
+    }
+
+    public async Task<ObjectTreeType> QueryObjectTree(string _path, bool _recursive)
+    {
+        var req = await client.RequestQueryObjectTree(
+            new QueryObjectTreeParams { path = _path, recursive = _recursive },
+            CancellationToken.None);
         driver.Results.ObjectTrees[_path] = req;
         return req;
     }

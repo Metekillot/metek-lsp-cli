@@ -32,9 +32,10 @@ namespace Metek.LspCli;
 public class QueryObjectTreeParams : IRequest<ObjectTreeType>
 {
     public string path;
+    public bool? recursive;
 }
 
-[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSourceGenerationOptions(WriteIndented = true, IndentSize = 1)]
 [JsonSerializable(typeof(ObjectTreeType))]
 [JsonSerializable(typeof(ObjectTreeVar))]
 [JsonSerializable(typeof(ObjectTreeProc))]
