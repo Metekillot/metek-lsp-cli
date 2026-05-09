@@ -35,7 +35,7 @@ public class QueryObjectTreeParams : IRequest<ObjectTreeType>
     public bool? recursive;
 }
 
-[JsonSourceGenerationOptions(WriteIndented = true, IndentSize = 1, NewLine = "")]
+[JsonSourceGenerationOptions(WriteIndented = true, IndentSize = 1)]
 [JsonSerializable(typeof(ObjectTreeType))]
 [JsonSerializable(typeof(ObjectTreeVar))]
 [JsonSerializable(typeof(ObjectTreeProc))]
