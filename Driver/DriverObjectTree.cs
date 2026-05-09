@@ -84,3 +84,17 @@ public record ObjectTreeProc(
         return JsonSerializer.Serialize(this, SourceGenerationContext.Default.ObjectTreeProc);
     }
 }
+[Parallel]
+[Method("experimental/dreammaker/queryAnnotation", Direction.ClientToServer)]
+[
+    GenerateHandler(Name = "QueryAnnotationTree", AllowDerivedRequests = true),
+    GenerateRequestMethods(typeof(ITextDocumentLanguageClient), typeof(ILanguageClient))
+]
+public record QueryAnnotationTreeParams : TextDocumentPositionParams, IRequest<AnnotationResult>
+{
+}
+
+public record AnnotationResult
+(
+    string outputAnnotations
+);

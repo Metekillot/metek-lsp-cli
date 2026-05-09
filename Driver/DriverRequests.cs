@@ -148,6 +148,7 @@ public partial class Driver
         public readonly SortedDictionary<string, LocationOrLocationLink[]> TypeDefinitions = [];
         public readonly SortedDictionary<string, TypeHierarchyItem[]> TypeHierarchyItems = [];
         public readonly SortedDictionary<string, Hover> Hover = [];
+        public readonly SortedDictionary<string, AnnotationResult> AnnotationTrees = [];
         internal readonly WorkspaceSymbol[] NoneWorkspaceSymbols = [];
         internal readonly SymbolInformationOrDocumentSymbol[] NoneDocumentSymbols = [];
         internal readonly FoldingRange[] NoneFoldingRanges = [];
@@ -366,6 +367,21 @@ public class TDXTable(Driver _driver) : RequestTable(_driver)
         if (req is null) return driver.Results.NoneTypeHierarchyItems;
         driver.Results.TypeHierarchyItems[$"{fileName}:{line}:{character}"] = req.ToArray();
 		return driver.Results.TypeHierarchyItems[$"{fileName}:{line}:{character}"];
+    }
+
+    public async Task<AnnotationResult?> AnnotationQuery(string fileName, int line, int character)
+    {
+        var req = await client.RequestQueryAnnotationTree(new QueryAnnotationTreeParams
+        {
+            TextDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
+            Position = (line, character)
+        });
+        if (req is null)
+        {
+            return null;
+        }
+        driver.Results.AnnotationTrees[$"{fileName}:{line}:{character}"] = req;
+        return req;
     }
 }
 
