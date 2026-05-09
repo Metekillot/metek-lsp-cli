@@ -26,6 +26,7 @@ using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Reflection;
+using System.Text;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.JsonRpc.Server;
@@ -157,7 +158,9 @@ public partial class Driver : IDisposable, IAsyncDisposable
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = RootPath
+                WorkingDirectory = RootPath,
+                StandardInputEncoding = new UTF8Encoding(),
+                StandardOutputEncoding = new UTF8Encoding()
             }
         };
         process.Start();

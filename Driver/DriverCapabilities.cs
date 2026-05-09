@@ -140,7 +140,7 @@ public partial class Driver
                 DynamicRegistration = true,
                 SignatureInformation = new SignatureInformationCapabilityOptions
                 {
-                    DocumentationFormat = new Container<MarkupKind>(MarkupKind.PlainText),
+                    DocumentationFormat = new Container<MarkupKind>(MarkupKind.PlainText,MarkupKind.Markdown),
                     ParameterInformation = new SignatureParameterInformationCapabilityOptions { LabelOffsetSupport = true },
                     ActiveParameterSupport = true,
                 },
