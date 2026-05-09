@@ -90,11 +90,11 @@ public record ObjectTreeProc(
     GenerateHandler(Name = "QueryAnnotationTree", AllowDerivedRequests = true),
     GenerateRequestMethods(typeof(ITextDocumentLanguageClient), typeof(ILanguageClient))
 ]
-public record QueryAnnotationTreeParams : TextDocumentPositionParams, IRequest<AnnotationResult>
+public record QueryAnnotationTreeParams : TextDocumentPositionParams, IRequest<QueryAnnotationTreeResult>
 {
 }
 
-public record AnnotationResult
+public record QueryAnnotationTreeResult
 (
     string outputAnnotations
 );
