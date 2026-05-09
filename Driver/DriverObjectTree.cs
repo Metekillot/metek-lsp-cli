@@ -35,7 +35,7 @@ public class QueryObjectTreeParams : IRequest<ObjectTreeType>
     public bool? recursive;
 }
 
-[JsonSourceGenerationOptions(WriteIndented = true, IndentSize = 1)]
+[JsonSourceGenerationOptions(WriteIndented = true, IndentSize = 1, NewLine = "")]
 [JsonSerializable(typeof(ObjectTreeType))]
 [JsonSerializable(typeof(ObjectTreeVar))]
 [JsonSerializable(typeof(ObjectTreeProc))]
@@ -55,12 +55,16 @@ public record ObjectTreeType(
     long n_children
 )
 {
+    public IEnumerable<ObjectTreeType> Decompose(ObjectTreeType node)
+    {
+        return node.children.SelectMany(n => n.children);
+    }
+    
     public override string ToString()
     {
         return JsonSerializer.Serialize(this, SourceGenerationContext.Default.ObjectTreeType);
     }
-}
-
+    }
 public record ObjectTreeVar(
     string name,
     SymbolKind kind,
