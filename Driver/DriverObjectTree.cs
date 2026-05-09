@@ -18,6 +18,7 @@ using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.JsonRpc.Generation;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
+using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 
@@ -101,5 +102,5 @@ public record QueryAnnotationTreeParams : TextDocumentPositionParams, IRequest<Q
 
 public record QueryAnnotationTreeResult
 (
-    string outputAnnotations
+    JToken? outputAnnotations
 );
