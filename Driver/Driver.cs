@@ -16,6 +16,7 @@
 Driver class - intended to serve as an obfuscation handle to make CLI
 handling of the LSP tools more ergonomic
 */
+global using QueryAnnotationRangeResult = Metek.LspCli.QueryAnnotationTreeResult;
 using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
