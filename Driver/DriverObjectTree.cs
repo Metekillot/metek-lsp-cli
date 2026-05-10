@@ -114,7 +114,8 @@ public record QueryAnnotationTreeResult
 ]
 public record QueryAnnotationRangeParams : IRequest<QueryAnnotationTreeResult?>
 {
-    public TextDocumentIdentifier textDocument;
+    [JsonPropertyName("text_document")]
+    public TextDocumentIdentifier text_document;
     public OmniSharp.Extensions.LanguageServer.Protocol.Models.Range range;
 }
 
@@ -132,7 +133,7 @@ public partial class TDXTable
     {
         var req = await client.RequestQueryAnnotationRange(new QueryAnnotationRangeParams
         {
-            textDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
+            text_document = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
             range = new(startLine, startCharacter, endLine, endCharacter)
         });
         if (req is null) return null;
