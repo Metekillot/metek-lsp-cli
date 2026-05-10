@@ -1,7 +1,35 @@
 using System;
+using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+
+// Bridge converter to allow Newtonsoft.Json (used by OmniSharp) to delegate to System.Text.Json
+public class StjBridgeConverter<T> : Newtonsoft.Json.JsonConverter
+{
+    public override bool CanConvert(Type objectType) => typeof(T).IsAssignableFrom(objectType);
+
+    public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, Newtonsoft.Json.JsonSerializer serializer)
+    {
+        if (reader.TokenType == JsonToken.Null) return null;
+        var token = JToken.Load(reader);
+        using var ms = new MemoryStream();
+        using var sw = new StreamWriter(ms, new UTF8Encoding(false));
+        using var jw = new JsonTextWriter(sw);
+        token.WriteTo(jw);
+        jw.Flush();
+        sw.Flush();
+        return System.Text.Json.JsonSerializer.Deserialize<T>(ms.ToArray(), AnnotationExtensions.SerializerOptions);
+    }
+
+    public override void WriteJson(JsonWriter writer, object? value, Newtonsoft.Json.JsonSerializer serializer)
+    {
+        if (value == null) { writer.WriteNull(); return; }
+        writer.WriteRawValue(System.Text.Json.JsonSerializer.Serialize(value, AnnotationExtensions.SerializerOptions));
+    }
+}
 
 // Location DTOs matching Serde serialization of lsp_types::Location
 public record AnnotationPosition(
@@ -32,7 +60,7 @@ public record RangeInclusiveDef<T>(
     [property: JsonPropertyName("end")] T End
 );
 
-[JsonConverter(typeof(JsonStringEnumConverter))]
+[System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PathOp
 {
     Slash,
@@ -40,17 +68,18 @@ public enum PathOp
     Colon
 }
 
-[JsonConverter(typeof(TypePathSegmentConverter))]
+[System.Text.Json.Serialization.JsonConverter(typeof(TypePathSegmentConverter))]
+[Newtonsoft.Json.JsonConverter(typeof(StjBridgeConverter<TypePathSegment>))]
 public record TypePathSegment(PathOp Op, string Ident);
 
-public class TypePathSegmentConverter : JsonConverter<TypePathSegment>
+public class TypePathSegmentConverter : System.Text.Json.Serialization.JsonConverter<TypePathSegment>
 {
     public override TypePathSegment Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartArray)
-            throw new JsonException("Expected StartArray for TypePathSegment");
+            throw new System.Text.Json.JsonException("Expected StartArray for TypePathSegment");
         reader.Read();
-        var op = JsonSerializer.Deserialize<PathOp>(ref reader, options);
+        var op = System.Text.Json.JsonSerializer.Deserialize<PathOp>(ref reader, options);
         reader.Read();
         var ident = reader.GetString()!;
         reader.Read();
@@ -60,7 +89,7 @@ public class TypePathSegmentConverter : JsonConverter<TypePathSegment>
     public override void Write(Utf8JsonWriter writer, TypePathSegment value, JsonSerializerOptions options)
     {
         writer.WriteStartArray();
-        JsonSerializer.Serialize(writer, value.Op, options);
+        System.Text.Json.JsonSerializer.Serialize(writer, value.Op, options);
         writer.WriteStringValue(value.Ident);
         writer.WriteEndArray();
     }
@@ -72,7 +101,8 @@ public record VarType(
     [property: JsonPropertyName("input_type")] string InputType
 );
 
-[JsonConverter(typeof(AnnotationConverter))]
+[System.Text.Json.Serialization.JsonConverter(typeof(AnnotationConverter))]
+[Newtonsoft.Json.JsonConverter(typeof(StjBridgeConverter<Annotation>))]
 public abstract record Annotation
 {
     // --- Unit variants (serialized as bare strings) ---
@@ -107,12 +137,13 @@ public abstract record Annotation
     public record MacroUse(string Name, DmLocation DefinitionLocation) : Annotation;
 }
 
+[Newtonsoft.Json.JsonConverter(typeof(StjBridgeConverter<AnnotationTuple>))]
 public record AnnotationTuple(
-    [property: JsonPropertyName("range")] RangeInclusiveDef<AnnotationLocation> Range,
+    [property: JsonPropertyName("range")] RangeInclusiveDef<AnnotationPosition> Range,
     [property: JsonPropertyName("annotation")] Annotation Annotation
 );
 
-public class AnnotationConverter : JsonConverter<Annotation>
+public class AnnotationConverter : System.Text.Json.Serialization.JsonConverter<Annotation>
 {
     public override Annotation? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -123,16 +154,16 @@ public class AnnotationConverter : JsonConverter<Annotation>
             {
                 "ParentCall" => new Annotation.ParentCall(),
                 "ReturnVal" => new Annotation.ReturnVal(),
-                var name => throw new JsonException($"Unknown unit variant: {name}")
+                var name => throw new System.Text.Json.JsonException($"Unknown unit variant: {name}")
             };
         }
 
         if (reader.TokenType != JsonTokenType.StartObject)
-            throw new JsonException("Expected StartObject or String for Annotation");
+            throw new System.Text.Json.JsonException("Expected StartObject or String for Annotation");
 
         reader.Read();
         if (reader.TokenType != JsonTokenType.PropertyName)
-            throw new JsonException("Expected PropertyName");
+            throw new System.Text.Json.JsonException("Expected PropertyName");
 
         var variant = reader.GetString();
         reader.Read();
@@ -142,67 +173,67 @@ public class AnnotationConverter : JsonConverter<Annotation>
             // --- Newtype variants ---
             case "TreeBlock":
             {
-                var v = new Annotation.TreeBlock(JsonSerializer.Deserialize<string[]>(ref reader, options)!);
+                var v = new Annotation.TreeBlock(System.Text.Json.JsonSerializer.Deserialize<string[]>(ref reader, options)!);
                 reader.Read();
                 return v;
             }
             case "Variable":
             {
-                var v = new Annotation.Variable(JsonSerializer.Deserialize<string[]>(ref reader, options)!);
+                var v = new Annotation.Variable(System.Text.Json.JsonSerializer.Deserialize<string[]>(ref reader, options)!);
                 reader.Read();
                 return v;
             }
             case "ScopedMissingIdent":
             {
-                var v = new Annotation.ScopedMissingIdent(JsonSerializer.Deserialize<string[]>(ref reader, options)!);
+                var v = new Annotation.ScopedMissingIdent(System.Text.Json.JsonSerializer.Deserialize<string[]>(ref reader, options)!);
                 reader.Read();
                 return v;
             }
             case "UnscopedCall":
             {
-                var v = new Annotation.UnscopedCall(JsonSerializer.Deserialize<string>(ref reader, options)!);
+                var v = new Annotation.UnscopedCall(System.Text.Json.JsonSerializer.Deserialize<string>(ref reader, options)!);
                 reader.Read();
                 return v;
             }
             case "UnscopedVar":
             {
-                var v = new Annotation.UnscopedVar(JsonSerializer.Deserialize<string>(ref reader, options)!);
+                var v = new Annotation.UnscopedVar(System.Text.Json.JsonSerializer.Deserialize<string>(ref reader, options)!);
                 reader.Read();
                 return v;
             }
             case "MacroDefinition":
             {
-                var v = new Annotation.MacroDefinition(JsonSerializer.Deserialize<string>(ref reader, options)!);
+                var v = new Annotation.MacroDefinition(System.Text.Json.JsonSerializer.Deserialize<string>(ref reader, options)!);
                 reader.Read();
                 return v;
             }
             case "Include":
             {
-                var v = new Annotation.Include(JsonSerializer.Deserialize<string>(ref reader, options)!);
+                var v = new Annotation.Include(System.Text.Json.JsonSerializer.Deserialize<string>(ref reader, options)!);
                 reader.Read();
                 return v;
             }
             case "Resource":
             {
-                var v = new Annotation.Resource(JsonSerializer.Deserialize<string>(ref reader, options)!);
+                var v = new Annotation.Resource(System.Text.Json.JsonSerializer.Deserialize<string>(ref reader, options)!);
                 reader.Read();
                 return v;
             }
             case "InSequence":
             {
-                var v = new Annotation.InSequence(JsonSerializer.Deserialize<int>(ref reader, options));
+                var v = new Annotation.InSequence(System.Text.Json.JsonSerializer.Deserialize<int>(ref reader, options));
                 reader.Read();
                 return v;
             }
             case "ProcArgument":
             {
-                var v = new Annotation.ProcArgument(JsonSerializer.Deserialize<int>(ref reader, options));
+                var v = new Annotation.ProcArgument(System.Text.Json.JsonSerializer.Deserialize<int>(ref reader, options));
                 reader.Read();
                 return v;
             }
             case "TypePath":
             {
-                var v = new Annotation.TypePath(JsonSerializer.Deserialize<TypePathSegment[]>(ref reader, options)!);
+                var v = new Annotation.TypePath(System.Text.Json.JsonSerializer.Deserialize<TypePathSegment[]>(ref reader, options)!);
                 reader.Read();
                 return v;
             }
@@ -272,55 +303,55 @@ public class AnnotationConverter : JsonConverter<Annotation>
             }
 
             default:
-                throw new JsonException($"Unknown data variant: {variant}");
+                throw new System.Text.Json.JsonException($"Unknown data variant: {variant}");
         }
     }
 
     private Annotation.TreePath ReadTreePath(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var elems = JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
+        var elems = System.Text.Json.JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
         return new Annotation.TreePath(elems[0].GetBoolean(), elems[1].Deserialize<string[]>(options)!);
     }
 
     private Annotation.IncompleteTreePath ReadIncompleteTreePath(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var elems = JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
+        var elems = System.Text.Json.JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
         return new Annotation.IncompleteTreePath(elems[0].GetBoolean(), elems[1].Deserialize<string[]>(options)!);
     }
 
     private Annotation.ProcHeader ReadProcHeader(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var elems = JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
+        var elems = System.Text.Json.JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
         return new Annotation.ProcHeader(elems[0].Deserialize<string[]>(options)!, elems[1].GetInt32());
     }
 
     private Annotation.ProcBody ReadProcBody(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var elems = JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
+        var elems = System.Text.Json.JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
         return new Annotation.ProcBody(elems[0].Deserialize<string[]>(options)!, elems[1].GetInt32());
     }
 
     private Annotation.ScopedCall ReadScopedCall(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var elems = JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
+        var elems = System.Text.Json.JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
         return new Annotation.ScopedCall(elems[0].Deserialize<string[]>(options)!, elems[1].GetString()!);
     }
 
     private Annotation.ScopedVar ReadScopedVar(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var elems = JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
+        var elems = System.Text.Json.JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
         return new Annotation.ScopedVar(elems[0].Deserialize<string[]>(options)!, elems[1].GetString()!);
     }
 
     private Annotation.LocalVarScope ReadLocalVarScope(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var elems = JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
+        var elems = System.Text.Json.JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
         return new Annotation.LocalVarScope(elems[0].Deserialize<VarType>(options)!, elems[1].GetString()!);
     }
 
     private Annotation.IncompleteTypePath ReadIncompleteTypePath(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var elems = JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
+        var elems = System.Text.Json.JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
         return new Annotation.IncompleteTypePath(
             elems[0].Deserialize<TypePathSegment[]>(options)!,
             elems[1].Deserialize<PathOp>(options)
@@ -329,7 +360,7 @@ public class AnnotationConverter : JsonConverter<Annotation>
 
     private Annotation.ProcArguments ReadProcArguments(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var elems = JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
+        var elems = System.Text.Json.JsonSerializer.Deserialize<JsonElement[]>(ref reader, options)!;
         return new Annotation.ProcArguments(
             elems[0].Deserialize<string[]>(options)!,
             elems[1].GetString()!,
@@ -339,7 +370,7 @@ public class AnnotationConverter : JsonConverter<Annotation>
 
     private Annotation.MacroUse ReadMacroUse(ref Utf8JsonReader reader, JsonSerializerOptions options)
     {
-        var dto = JsonSerializer.Deserialize<MacroUseDto>(ref reader, options)!;
+        var dto = System.Text.Json.JsonSerializer.Deserialize<MacroUseDto>(ref reader, options)!;
         return new Annotation.MacroUse(dto.Name, dto.DefinitionLocation);
     }
 
@@ -424,12 +455,12 @@ public class AnnotationConverter : JsonConverter<Annotation>
                 writer.WriteStartObject();
                 writer.WriteString("name", v.Name);
                 writer.WritePropertyName("definition_location");
-                JsonSerializer.Serialize(writer, v.DefinitionLocation, options);
+                System.Text.Json.JsonSerializer.Serialize(writer, v.DefinitionLocation, options);
                 writer.WriteEndObject();
                 writer.WriteEndObject();
                 break;
             default:
-                throw new JsonException($"Unknown Annotation variant: {value.GetType()}");
+                throw new System.Text.Json.JsonException($"Unknown Annotation variant: {value.GetType()}");
         }
     }
 
@@ -437,7 +468,7 @@ public class AnnotationConverter : JsonConverter<Annotation>
     {
         writer.WriteStartObject();
         writer.WritePropertyName(variant);
-        JsonSerializer.Serialize(writer, value, options);
+        System.Text.Json.JsonSerializer.Serialize(writer, value, options);
         writer.WriteEndObject();
     }
 
@@ -448,7 +479,7 @@ public class AnnotationConverter : JsonConverter<Annotation>
         writer.WriteStartArray();
         foreach (var val in values)
         {
-            JsonSerializer.Serialize(writer, val, val?.GetType() ?? typeof(object), options);
+            System.Text.Json.JsonSerializer.Serialize(writer, val, val?.GetType() ?? typeof(object), options);
         }
         writer.WriteEndArray();
         writer.WriteEndObject();
@@ -459,8 +490,8 @@ public class AnnotationConverter : JsonConverter<Annotation>
         writer.WriteStartObject();
         writer.WritePropertyName(variant);
         writer.WriteStartArray();
-        JsonSerializer.Serialize(writer, v1, v1.GetType(), options);
-        JsonSerializer.Serialize(writer, v2, v2.GetType(), options);
+        System.Text.Json.JsonSerializer.Serialize(writer, v1, v1.GetType(), options);
+        System.Text.Json.JsonSerializer.Serialize(writer, v2, v2.GetType(), options);
         writer.WriteEndArray();
         writer.WriteEndObject();
     }
@@ -468,11 +499,16 @@ public class AnnotationConverter : JsonConverter<Annotation>
 
 public static class AnnotationExtensions
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
+    internal static JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         Converters = { new JsonStringEnumConverter() }
     };
+
+    public static void SetSerializerOptions(JsonSerializerOptions options)
+    {
+        SerializerOptions = options;
+    }
 
     public static AnnotationTuple[]? ToAnnotationTuples(this JToken? token)
     {
@@ -480,16 +516,16 @@ public static class AnnotationExtensions
             return null;
 
         var json = token.ToString(Newtonsoft.Json.Formatting.None);
-        return JsonSerializer.Deserialize<AnnotationTuple[]>(json, SerializerOptions);
+        return System.Text.Json.JsonSerializer.Deserialize<AnnotationTuple[]>(json, SerializerOptions);
     }
 
     public static string ToJsonString(this Annotation annotation)
     {
-        return JsonSerializer.Serialize(annotation, SerializerOptions);
+        return System.Text.Json.JsonSerializer.Serialize(annotation, SerializerOptions);
     }
 
     public static string ToJsonString(this AnnotationTuple tuple)
     {
-        return JsonSerializer.Serialize(tuple, SerializerOptions);
+        return System.Text.Json.JsonSerializer.Serialize(tuple, SerializerOptions);
     }
 }

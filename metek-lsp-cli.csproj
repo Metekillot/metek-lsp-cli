@@ -20,10 +20,13 @@
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/Client/Client.csproj" />
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/Protocol/Protocol.csproj" />
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/JsonRpc.Generators/JsonRpc.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="src/Metek.LspCli.Generators/Metek.LspCli.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <Compile Remove="lib/**/*.cs" />
     <None Remove="lib/**/*.cs" />
     <Compile Remove="test/**/*.cs" />
     <None Remove="test/**/*.cs" />
+    <Compile Remove="src/**/*.cs" />
+    <None Remove="src/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>

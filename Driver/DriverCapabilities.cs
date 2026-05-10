@@ -12,31 +12,14 @@
 * You should have received a copy of the GNU Lesser General Public License along with metek-lsp-cli. If not, see <https://www.gnu.org/licenses/>. 
 */
 
-using System.Reflection;
-using MediatR;
-using Newtonsoft.Json.Linq;
-using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.JsonRpc.Server;
-using OmniSharp.Extensions.JsonRpc.Serialization;
-using Newtonsoft.Json;
-using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
-using static OmniSharp.Extensions.LanguageServer.Protocol.AbstractHandlers;
-using Microsoft.IO;
 using Nerdbank.Streams;
-using System.Buffers;
-using System.Dynamic;
-using System.IO.Pipelines;
-using Microsoft.VisualBasic;
-using System.Text;
+
 namespace Metek.LspCli;
 public partial class Driver
 {
-
-    public static JsonSerializer _notifSerializer = JsonSerializer.Create();
-    public JsonSerializer NotifSerializer => Driver._notifSerializer;
     public static readonly Container<SymbolKind> AllSymbolKinds = new(
             SymbolKind.File, SymbolKind.Module, SymbolKind.Namespace, SymbolKind.Package,
             SymbolKind.Class, SymbolKind.Method, SymbolKind.Property, SymbolKind.Field,
@@ -273,20 +256,6 @@ public partial class Driver
         Experimental = {},
     };
 
-    public static readonly string[] ServerNotificationMethods = DiscoverServerNotifications();
-
-    public static string[] DiscoverServerNotifications()
-    {
-        var assembly = typeof(TextDocumentPositionParams).Assembly;
-        var positionParamNotifs = assembly.GetTypes()
-            .Where(t => !t.IsAbstract && !t.IsInterface && typeof(IRequest<Unit>).IsAssignableFrom(t))
-            .SelectMany(t => t.GetCustomAttributes<MethodAttribute>())
-            .Where(a => (a.Direction & Direction.ServerToClient) != 0)
-            .Select(a => a.Method)
-            .Distinct()
-            .ToArray();
-        return positionParamNotifs;
-    }
 #if DUAL_STREAM
     private StreamMap Streams { get; set; }
     public readonly struct StreamMap : IDisposable, IAsyncDisposable
@@ -348,19 +317,6 @@ public partial class Driver
             .WithClientInfo(new ClientInfo { Name = "LspCLIWrapper", Version = "0.1" })
             .WithClientCapabilities(BuildClientCapabilities());
 
-        foreach (var method in ServerNotificationMethods)
-        {
-            var key = method;
-            options.OnJsonNotification(key, (JToken token) =>
-            {
-                if (!Notifications.TryGetValue(key, out var list))
-                {
-                    list = new List<Notification>();
-                    Notifications[key] = list;
-                }
-                var serialized = new Notification(key, token);
-                list.Add(serialized);
-            });
-        }
+        ConfigureNotifications(options);
     }
 }

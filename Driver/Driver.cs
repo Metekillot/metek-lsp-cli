@@ -22,15 +22,12 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using MediatR;
-using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Reflection;
 using System.Text;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
-using OmniSharp.Extensions.JsonRpc.Server;
 
 
 public static class FreeAsInFreedom
@@ -72,7 +69,6 @@ public partial class Driver : IDisposable, IAsyncDisposable
     public Process ServerProcess { get; set; } = null!;
     public LanguageClient ClientInterface { get; set; } = null!;
     public LanguageClient cI => ClientInterface;
-    public Dictionary<string, List<Notification>> Notifications { get; } = new();
 
     public void Dispose()
     {

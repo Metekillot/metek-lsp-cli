@@ -18,7 +18,6 @@ using MediatR;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.JsonRpc.Generation;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
-using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 
@@ -37,10 +36,13 @@ public class QueryObjectTreeParams : IRequest<ObjectTreeType>
     public bool? recursive;
 }
 
-[JsonSourceGenerationOptions(WriteIndented = true, IndentSize = 1)]
+[JsonSourceGenerationOptions(WriteIndented = true, IndentSize = 1, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(ObjectTreeType))]
 [JsonSerializable(typeof(ObjectTreeVar))]
 [JsonSerializable(typeof(ObjectTreeProc))]
+[JsonSerializable(typeof(QueryAnnotationTreeResult))]
+[JsonSerializable(typeof(AnnotationTuple))]
+[JsonSerializable(typeof(Annotation))]
 internal partial class SourceGenerationContext : JsonSerializerContext
 {
 }
@@ -101,6 +103,7 @@ public record QueryAnnotationTreeParams : TextDocumentPositionParams, IRequest<Q
 {
 }
 
+[Newtonsoft.Json.JsonConverter(typeof(StjBridgeConverter<QueryAnnotationTreeResult>))]
 public record QueryAnnotationTreeResult
 (
     AnnotationTuple[]? outputAnnotations
