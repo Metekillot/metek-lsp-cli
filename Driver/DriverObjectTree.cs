@@ -20,6 +20,7 @@ using OmniSharp.Extensions.JsonRpc.Generation;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client;
 using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 
 
 namespace Metek.LspCli;
