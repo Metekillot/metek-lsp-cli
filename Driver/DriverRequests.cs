@@ -231,7 +231,7 @@ public class DOCTable(Driver _driver) : RequestTable(_driver)
     }
 }
 
-public class TDXTable(Driver _driver) : RequestTable(_driver)
+public partial class TDXTable(Driver _driver) : RequestTable(_driver)
 {
     public async Task<CallHierarchyItem[]> CallHierarchyPrepare(string fileName, int line, int character)
     {

@@ -104,3 +104,60 @@ public record QueryAnnotationTreeResult
 (
     JToken? outputAnnotations
 );
+
+[Parallel]
+[Method("experimental/dreammaker/queryAnnotationRange", Direction.ClientToServer)]
+[
+    GenerateHandler(Name = "QueryAnnotationRange", AllowDerivedRequests = true),
+    GenerateRequestMethods(typeof(ITextDocumentLanguageClient), typeof(ILanguageClient))
+]
+public record QueryAnnotationRangeParams : IRequest<QueryAnnotationTreeResult?>
+{
+    public TextDocumentIdentifier textDocument;
+    public OmniSharp.Extensions.LanguageServer.Protocol.Models.Range range;
+}
+
+public partial class TDXTable
+{
+    public async Task<QueryAnnotationTreeResult?> AnnotationQueryRange(
+        string fileName, OmniSharp.Extensions.LanguageServer.Protocol.Models.Range range)
+    {
+        return await AnnotationQueryRange(
+            fileName, range.Start.Line, range.Start.Character, range.End.Line, range.End.Character);
+    }
+
+    public async Task<QueryAnnotationTreeResult?> AnnotationQueryRange(
+        string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
+    {
+        var req = await client.RequestQueryAnnotationRange(new QueryAnnotationRangeParams
+        {
+            textDocument = DocumentUri.FromFileSystemPath(Path.GetFullPath(fileName, driver.RootPath)),
+            range = new(startLine, startCharacter, endLine, endCharacter)
+        });
+        if (req is null) return null;
+        driver.Results.AnnotationTrees[$"{fileName}:{startLine}:{startCharacter}:{endLine}:{endCharacter}"] = req;
+        return req;
+    }
+
+    public async Task<QueryAnnotationTreeResult?> AnnotationQueryRange(
+        string fileName, (int line, int character) start, (int line, int character) end)
+    {
+        return await AnnotationQueryRange(fileName, start.line, start.character, end.line, end.character);
+    }
+
+    public async Task<QueryAnnotationTreeResult?> AnnotationQueryRange(
+        string fileName, int startLine, int endLine)
+    {
+        return await AnnotationQueryRange(fileName, startLine, 0, endLine, 0);
+    }
+
+    public async Task<QueryAnnotationTreeResult?> AnnotationQueryRange(
+        string fileName)
+    {
+        var fullPath = Path.GetFullPath(fileName, driver.RootPath);
+        var lines = await File.ReadAllLinesAsync(fullPath);
+        int endLine = lines.Length > 0 ? lines.Length - 1 : 0;
+        int endCharacter = lines.Length > 0 ? lines[^1].Length : 0;
+        return await AnnotationQueryRange(fileName, 0, 0, endLine, endCharacter);
+    }
+}
