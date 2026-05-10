@@ -103,7 +103,7 @@ public record QueryAnnotationTreeParams : TextDocumentPositionParams, IRequest<Q
 
 public record QueryAnnotationTreeResult
 (
-    JToken? outputAnnotations
+    AnnotationTuple[]? outputAnnotations
 );
 
 [Parallel]
