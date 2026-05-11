@@ -2,7 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-
+    <PackageId>Metek.LspCli</PackageId>
+    <Version>0.2.0</Version>
+    <Authors>Joshua 'Joan Metek' Kidder</Authors>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -20,8 +24,11 @@
   <ItemGroup>
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/Client/Client.csproj" />
     <ProjectReference Include="./lib/csharp-language-server-protocol/src/Protocol/Protocol.csproj" />
-    <ProjectReference Include="./lib/csharp-language-server-protocol/src/JsonRpc.Generators/JsonRpc.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="src/Metek.LspCli.Generators/Metek.LspCli.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference
+      Include="./lib/csharp-language-server-protocol/src/JsonRpc.Generators/JsonRpc.Generators.csproj"
+      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="src/Metek.LspCli.Generators/Metek.LspCli.Generators.csproj"
+      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <AdditionalFiles Include="Driver/DriverRequestsConfig.json" />
     <Compile Remove="lib/**/*.cs" />
     <None Remove="lib/**/*.cs" />
@@ -29,6 +36,10 @@
     <None Remove="test/**/*.cs" />
     <Compile Remove="src/**/*.cs" />
     <None Remove="src/**/*.cs" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="LICENSE" Pack="true" PackagePath=""/>
+    <None Include="LICENSE.csharp-language-server-protocol" Pack="true" PackagePath=""/>
+    <None Include="Driver/DriverRequestsConfig.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,8 +49,10 @@
   </ItemGroup>
 
   <Target Name="CopyToPwshHandles" AfterTargets="Build">
-    <Copy SourceFiles="@(ReferenceCopyLocalPaths)" DestinationFolder="pwsh_handles/lib" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFiles="pwsh_handles/lib/$(AssemblyName).dll" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(ReferenceCopyLocalPaths)" DestinationFolder="pwsh_handles/lib"
+      SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll"
+      DestinationFiles="pwsh_handles/lib/$(AssemblyName).dll" SkipUnchangedFiles="true" />
   </Target>
 
   <Target Name="FullClean" AfterTargets="Clean">

@@ -30,3 +30,6 @@ As stated within [the LICENSE.csharp-language-server-protocol](./LICENSE.csharp-
 ### Categorization and storage of notifications from the server
 
 ### Function signature help
+
+### And more
+See DriveRequestsConfig.json for built-in supported request handles adapted from the Omnisharp LSP protocol. AnnotationRange and ObjectTree are exclusive to the [metek-lsp-cli-submodule branch of this SpacemanDMM fork](https://github.com/Metekillot/SpacemanDMM)
