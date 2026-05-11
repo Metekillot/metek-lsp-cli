@@ -39,8 +39,8 @@ namespace Metek.LspCli
                     var name = attr.Name.ToString();
                     if (name is not ("RegisterNotification" or "RegisterNotificationAttribute"))
                         continue;
-                    if (attr.ArgumentList?.Arguments.Count < 1) continue;
-                    var arg = attr.ArgumentList.Arguments[0].Expression;
+                    if ((attr.ArgumentList?.Arguments.Count ?? 0) < 1) continue;
+                    var arg = attr.ArgumentList!.Arguments[0].Expression;
                     if (arg is LiteralExpressionSyntax lit && lit.IsKind(SyntaxKind.StringLiteralExpression))
                         list.Add(lit.Token.ValueText);
                 }

@@ -109,54 +109,54 @@ void TestNewtonsoftBridge<T>(string name, string json, Action<T>? validate = nul
 }
 
 Console.WriteLine("=== Unit Variants ===");
-Test("ParentCall", "\"ParentCall\"", v => Debug.Assert(v is Annotation.ParentCall));
-Test("ReturnVal", "\"ReturnVal\"", v => Debug.Assert(v is Annotation.ReturnVal));
+Test("ParentCall", "{\"type\":\"ParentCall\"}", v => Debug.Assert(v is Annotation.ParentCall));
+Test("ReturnVal", "{\"type\":\"ReturnVal\"}", v => Debug.Assert(v is Annotation.ReturnVal));
 
 Console.WriteLine("\n=== Newtype Variants (single-field) ===");
-Test("TreeBlock", "{\"TreeBlock\":[\"usr\",\"src\",\"main\"]}", v =>
+Test("TreeBlock", "{\"type\":\"TreeBlock\",\"idents\":[\"usr\",\"src\",\"main\"]}", v =>
 {
     var tb = v as Annotation.TreeBlock;
     Debug.Assert(tb!.Idents is ["usr", "src", "main"]);
 });
-Test("Variable", "{\"Variable\":[\"x\"]}");
-Test("ScopedMissingIdent", "{\"ScopedMissingIdent\":[\"a\",\"b\"]}");
-Test("UnscopedCall", "{\"UnscopedCall\":\"foo\"}", v =>
+Test("Variable", "{\"type\":\"Variable\",\"idents\":[\"x\"]}");
+Test("ScopedMissingIdent", "{\"type\":\"ScopedMissingIdent\",\"idents\":[\"a\",\"b\"]}");
+Test("UnscopedCall", "{\"type\":\"UnscopedCall\",\"ident\":\"foo\"}", v =>
 {
     var u = v as Annotation.UnscopedCall;
     Debug.Assert(u!.Ident == "foo");
 });
-Test("UnscopedVar", "{\"UnscopedVar\":\"bar\"}");
-Test("MacroDefinition", "{\"MacroDefinition\":\"MY_MACRO\"}");
-Test("Include", "{\"Include\":\"/path/to/file.dm\"}");
-Test("Resource", "{\"Resource\":\"icons/thing.dmi\"}");
-Test("InSequence", "{\"InSequence\":3}", v =>
+Test("UnscopedVar", "{\"type\":\"UnscopedVar\",\"ident\":\"bar\"}");
+Test("MacroDefinition", "{\"type\":\"MacroDefinition\",\"ident\":\"MY_MACRO\"}");
+Test("Include", "{\"type\":\"Include\",\"path\":\"/path/to/file.dm\"}");
+Test("Resource", "{\"type\":\"Resource\",\"path\":\"icons/thing.dmi\"}");
+Test("InSequence", "{\"type\":\"InSequence\",\"index\":3}", v =>
 {
     var s = v as Annotation.InSequence;
     Debug.Assert(s!.Index == 3);
 });
-Test("ProcArgument", "{\"ProcArgument\":0}");
+Test("ProcArgument", "{\"type\":\"ProcArgument\",\"index\":0}");
 
 Console.WriteLine("\n=== TypePath (newtype with complex value) ===");
-Test("TypePath", "{\"TypePath\":[[\"Slash\",\"mob\"],[\"Slash\",\"living\"],[\"Dot\",\"src\"]]}",
+Test("TypePath", "{\"type\":\"TypePath\",\"path\":[{\"op\":\"Slash\",\"ident\":\"mob\"},{\"op\":\"Slash\",\"ident\":\"living\"},{\"op\":\"Dot\",\"ident\":\"src\"}]}",
     v => Debug.Assert(v is Annotation.TypePath));
 
 Console.WriteLine("\n=== Tuple Variants (multi-field) ===");
-Test("TreePath", "{\"TreePath\":[true,[\"usr\"]]}", v =>
+Test("TreePath", "{\"type\":\"TreePath\",\"is_absolute\":true,\"idents\":[\"usr\"]}", v =>
 {
     var tp = v as Annotation.TreePath;
     Debug.Assert(tp!.IsAbsolute == true);
     Debug.Assert(tp.Idents is ["usr"]);
 });
-Test("IncompleteTreePath", "{\"IncompleteTreePath\":[false,[\"a\",\"b\"]]}");
-Test("ProcHeader", "{\"ProcHeader\":[[\"do_thing\"],2]}", v =>
+Test("IncompleteTreePath", "{\"type\":\"IncompleteTreePath\",\"is_absolute\":false,\"idents\":[\"a\",\"b\"]}");
+Test("ProcHeader", "{\"type\":\"ProcHeader\",\"idents\":[\"do_thing\"],\"arity\":2}", v =>
 {
     var ph = v as Annotation.ProcHeader;
     Debug.Assert(ph!.Arity == 2);
 });
-Test("ProcBody", "{\"ProcBody\":[[\"do_thing\"],2]}");
-Test("ScopedCall", "{\"ScopedCall\":[[\"src\"],\"SomeProc\"]}");
-Test("ScopedVar", "{\"ScopedVar\":[[\"src\"],\"some_var\"]}");
-Test("ProcArguments", "{\"ProcArguments\":[[\"src\"],\"SomeProc\",1]}", v =>
+Test("ProcBody", "{\"type\":\"ProcBody\",\"idents\":[\"do_thing\"],\"arity\":2}");
+Test("ScopedCall", "{\"type\":\"ScopedCall\",\"scope\":[\"src\"],\"ident\":\"SomeProc\"}");
+Test("ScopedVar", "{\"type\":\"ScopedVar\",\"scope\":[\"src\"],\"ident\":\"some_var\"}");
+Test("ProcArguments", "{\"type\":\"ProcArguments\",\"scope\":[\"src\"],\"ident\":\"SomeProc\",\"arity\":1}", v =>
 {
     var pa = v as Annotation.ProcArguments;
     Debug.Assert(pa!.Scope is ["src"]);
@@ -166,16 +166,16 @@ Test("ProcArguments", "{\"ProcArguments\":[[\"src\"],\"SomeProc\",1]}", v =>
 
 Console.WriteLine("\n=== VarType / LocalVarScope ===");
 Test("LocalVarScope",
-    "{\"LocalVarScope\":[{\"flags\":\"static/tmp\",\"type_path\":[\"mob\"],\"input_type\":\"mob\"},\"x\"]}",
+    "{\"type\":\"LocalVarScope\",\"var\":{\"flags\":\"static/tmp\",\"type_path\":[\"mob\"],\"input_type\":\"mob\"},\"ident\":\"x\"}",
     v => Debug.Assert(v is Annotation.LocalVarScope));
 
 Console.WriteLine("\n=== IncompleteTypePath ===");
-Test("IncompleteTypePath", "{\"IncompleteTypePath\":[[[\"Slash\",\"mob\"]],\"Dot\"]}",
+Test("IncompleteTypePath", "{\"type\":\"IncompleteTypePath\",\"path\":[{\"op\":\"Slash\",\"ident\":\"mob\"}],\"op\":\"Dot\"}",
     v => Debug.Assert(v is Annotation.IncompleteTypePath));
 
 Console.WriteLine("\n=== MacroUse (struct variant) ===");
 Test("MacroUse",
-    "{\"MacroUse\":{\"name\":\"ASSERT\",\"definition_location\":{\"file\":0,\"line\":42,\"column\":10}}}",
+    "{\"type\":\"MacroUse\",\"name\":\"ASSERT\",\"definition_location\":{\"file\":0,\"line\":42,\"column\":10}}",
     v =>
     {
         var mu = v as Annotation.MacroUse;
@@ -186,7 +186,7 @@ Test("MacroUse",
 
 Console.WriteLine("\n=== AnnotationTuple (Position-based Range) ===");
 TestTuple("AnnotationTuple with TreePath",
-    "{\"range\":{\"start\":{\"line\":10,\"character\":0},\"end\":{\"line\":10,\"character\":5}},\"annotation\":{\"TreePath\":[true,[\"usr\"]]}}",
+    "{\"range\":{\"start\":{\"line\":10,\"character\":0},\"end\":{\"line\":10,\"character\":5}},\"annotation\":{\"type\":\"TreePath\",\"is_absolute\":true,\"idents\":[\"usr\"]}}",
     v =>
     {
         Debug.Assert(v.Range.Start.Line == 10);
@@ -194,20 +194,20 @@ TestTuple("AnnotationTuple with TreePath",
     });
 
 Console.WriteLine("\n=== Newtonsoft Bridge Tests ===");
-TestNewtonsoftBridge<Annotation>("Bridge Annotation (ParentCall)", "\"ParentCall\"", v => Debug.Assert(v is Annotation.ParentCall));
+TestNewtonsoftBridge<Annotation>("Bridge Annotation (ParentCall)", "{\"type\":\"ParentCall\"}", v => Debug.Assert(v is Annotation.ParentCall));
 TestNewtonsoftBridge<Annotation>("Bridge Annotation (MacroUse)", 
-    "{\"MacroUse\":{\"name\":\"MACRO\",\"definition_location\":{\"file\":1,\"line\":2,\"column\":3}}}",
+    "{\"type\":\"MacroUse\",\"name\":\"MACRO\",\"definition_location\":{\"file\":1,\"line\":2,\"column\":3}}",
     v => Debug.Assert(v is Annotation.MacroUse mu && mu.Name == "MACRO"));
 
 TestNewtonsoftBridge<AnnotationTuple>("Bridge AnnotationTuple",
-    "{\"range\":{\"start\":{\"line\":5,\"character\":1},\"end\":{\"line\":5,\"character\":10}},\"annotation\":{\"UnscopedVar\":\"x\"}}",
+    "{\"range\":{\"start\":{\"line\":5,\"character\":1},\"end\":{\"line\":5,\"character\":10}},\"annotation\":{\"type\":\"UnscopedVar\",\"ident\":\"x\"}}",
     v => {
         Debug.Assert(v.Range.Start.Character == 1);
         Debug.Assert(v.Annotation is Annotation.UnscopedVar uv && uv.Ident == "x");
     });
 
 TestNewtonsoftBridge<QueryAnnotationTreeResult>("Bridge Full Result",
-    "{\"outputAnnotations\": [{\"range\":{\"start\":{\"line\":1,\"character\":1},\"end\":{\"line\":1,\"character\":2}},\"annotation\":\"ReturnVal\"}]}",
+    "{\"outputAnnotations\": [{\"range\":{\"start\":{\"line\":1,\"character\":1},\"end\":{\"line\":1,\"character\":2}},\"annotation\":{\"type\":\"ReturnVal\"}}]}",
     v => {
         Debug.Assert(v.outputAnnotations!.Length == 1);
         Debug.Assert(v.outputAnnotations[0].Annotation is Annotation.ReturnVal);
@@ -234,7 +234,7 @@ Console.WriteLine("\n=== Immediate Enumeration ===");
 // so they can be enumerated immediately after LSP response deserialization.
 
 // 1) QueryAnnotationTreeResult.outputAnnotations is AnnotationTuple[] (not IEnumerable deferred)
-var resultJson = """{"outputAnnotations":[{"range":{"start":{"line":1,"character":1},"end":{"line":1,"character":2}},"annotation":"ReturnVal"},{"range":{"start":{"line":2,"character":0},"end":{"line":2,"character":3}},"annotation":{"TreePath":[true,["usr","src"]]}}]}""";
+var resultJson = """{"outputAnnotations":[{"range":{"start":{"line":1,"character":1},"end":{"line":1,"character":2}},"annotation":{"type":"ReturnVal"}},{"range":{"start":{"line":2,"character":0},"end":{"line":2,"character":3}},"annotation":{"type":"TreePath","is_absolute":true,"idents":["usr","src"]}}]}""";
 TestImmediateEnum("OutputAnnotations type", resultJson, r =>
 {
     Debug.Assert(r.outputAnnotations is AnnotationTuple[], "outputAnnotations should be AnnotationTuple[] (concrete array)");

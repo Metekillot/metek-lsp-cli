@@ -4,7 +4,11 @@ using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace Metek.LspCli.Generators;
+namespace System.Runtime.CompilerServices
+{
+    internal static class IsExternalInit {}
+}
+namespace Metek.LspCli.Generators{
 
 [Generator]
 public sealed class DriverRequestsGenerator : IIncrementalGenerator
@@ -245,7 +249,7 @@ public sealed class DriverRequestsGenerator : IIncrementalGenerator
                         var fullPath = Path.GetFullPath(fileName, driver.RootPath);
                         var lines = await File.ReadAllLinesAsync(fullPath);
                         int endLine = lines.Length > 0 ? lines.Length - 1 : 0;
-                        int endCharacter = lines.Length > 0 ? lines[^1].Length : 0;
+                        int endCharacter = lines.Length > 0 ? lines[lines.Length - 1].Length : 0;
                         return await {methodName}(fileName, 0, 0, endLine, endCharacter);
                 """);
         }
@@ -315,8 +319,8 @@ public sealed class DriverRequestsGenerator : IIncrementalGenerator
         var names = new[] { 
             $"{methodName}Params", 
             $"{methodName}RequestParam",
-            methodName.EndsWith("s") ? $"{methodName[..^1]}Params" : null,
-            methodName.EndsWith("Full") ? $"{methodName[..^4]}Params" : null,
+            methodName.EndsWith("s") ? $"{methodName.Substring(0, methodName.Length - 1)}Params" : null,
+            methodName.EndsWith("Full") ? $"{methodName.Substring(0, methodName.Length - 4)}Params" : null,
         }.OfType<string>();
 
         var nss = new[] { "OmniSharp.Extensions.LanguageServer.Protocol.Models", "Metek.LspCli" };
@@ -330,7 +334,7 @@ public sealed class DriverRequestsGenerator : IIncrementalGenerator
         if (methodName == "QueryObjectTree") return "ObjectTrees";
         if (methodName is "SemanticTokensFull" or "SemanticTokensRange") return "SemanticTokens";
 
-        if (methodName.EndsWith("Prepare")) return methodName[..^7] + "Items";
+        if (methodName.EndsWith("Prepare")) return methodName.Substring(0, methodName.Length - 7) + "Items";
         return !isCollection ? methodName : (methodName.EndsWith("s") ? methodName : methodName + "s");
     }
 
@@ -380,4 +384,14 @@ public sealed class DriverRequestsGenerator : IIncrementalGenerator
         "WSP" => ["query"],
         _ => ["fileName"],
     };
+}
+
+internal static class KeyValuePairExtensions
+{
+    public static void Deconstruct<TKey, TValue>(this KeyValuePair<TKey, TValue> kvp, out TKey key, out TValue value)
+    {
+        key = kvp.Key;
+        value = kvp.Value;
+    }
+}
 }
