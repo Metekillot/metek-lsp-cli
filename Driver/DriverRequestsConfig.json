@@ -1,0 +1,49 @@
+{
+  "DOC": [
+    "DocumentSymbol",
+    "FoldingRange",
+    "SemanticTokensFull"
+  ],
+  "TDP": [
+    "CallHierarchyPrepare",
+    "Completion",
+    "Declaration",
+    "Definition",
+    "DocumentHighlight",
+    "Hover",
+    "Implementation",
+    "LinkedEditingRange",
+    "Monikers",
+    "References",
+    "SignatureHelp",
+    "TypeDefinition",
+    "TypeHierarchyPrepare",
+    "QueryAnnotationTree"
+  ],
+  "WSP": [
+    "WorkspaceSymbols"
+  ],
+  "Misc": {
+    "SemanticTokensRange": {
+      "table": "DOC",
+      "params": ["fileName", "startLine", "startCharacter", "endLine", "endCharacter"]
+    },
+    "QueryAnnotationRange": {
+      "table": "TDX",
+      "params": ["fileName", "startLine", "startCharacter", "endLine", "endCharacter"],
+      "overloads": {
+        "Range": ["fileName", "range"],
+        "Tuples": ["fileName", "start", "end"],
+        "Lines": ["fileName", "startLine", "endLine"],
+        "FileOnly": ["fileName"]
+      }
+    },
+    "QueryObjectTree": {
+      "table": "WSP",
+      "params": ["path"],
+      "overloads": {
+        "Recursive": ["path", "recursive"]
+      }
+    }
+  }
+}
