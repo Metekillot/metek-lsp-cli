@@ -200,7 +200,13 @@ public sealed class DriverRequestsGenerator : IIncrementalGenerator
 
     private static List<(string prop, string value)> GetKnownSettings(INamedTypeSymbol? paramsType, List<string> paramNames)
     {
-        var members = paramsType?.GetMembers().Select(m => m.Name).ToHashSet() ?? [];
+        var members = new HashSet<string>();
+        var curr = paramsType;
+        while (curr != null)
+        {
+            foreach (var m in curr.GetMembers()) members.Add(m.Name);
+            curr = curr.BaseType;
+        }
         var result = new List<(string, string)>();
 
         void TryAdd(string prop, string value, params string[] reqs)

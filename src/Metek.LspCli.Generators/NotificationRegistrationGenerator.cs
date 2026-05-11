@@ -32,7 +32,7 @@ namespace Metek.LspCli
             transform: static (ctx, _) =>
             {
                 var cds = (ClassDeclarationSyntax)ctx.Node;
-                var methods = new List<string>();
+                var list = new List<string>();
                 foreach (var attrList in cds.AttributeLists)
                 foreach (var attr in attrList.Attributes)
                 {
@@ -42,19 +42,19 @@ namespace Metek.LspCli
                     if (attr.ArgumentList?.Arguments.Count < 1) continue;
                     var arg = attr.ArgumentList.Arguments[0].Expression;
                     if (arg is LiteralExpressionSyntax lit && lit.IsKind(SyntaxKind.StringLiteralExpression))
-                        methods.Add(lit.Token.ValueText);
+                        list.Add(lit.Token.ValueText);
                 }
-                return methods.Count > 0 ? methods : null;
+                return list.Count > 0 ? list : null;
             })
             .Where(static m => m is not null)
             .Collect();
 
-        context.RegisterSourceOutput(methods, Generate);
+        context.RegisterSourceOutput(methods, (ctx, m) => Generate(ctx, m!));
     }
 
     private static void Generate(SourceProductionContext ctx, ImmutableArray<List<string>> methods)
     {
-        var all = methods.SelectMany(m => m!).Distinct().Order().ToList();
+        var all = methods.SelectMany(m => m!).Distinct().OrderBy(x => x).ToList();
         if (all.Count == 0) return;
 
         var sb = new StringBuilder();
