@@ -5,23 +5,57 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 // Bridge converter to allow Newtonsoft.Json (used by OmniSharp) to delegate to System.Text.Json
 public class StjBridgeConverter<T> : Newtonsoft.Json.JsonConverter
 {
     public override bool CanConvert(Type objectType) => typeof(T).IsAssignableFrom(objectType);
 
+    private JToken ReorderDiscriminator(JToken token)
+    {
+        if (token is JObject obj)
+        {
+            var newObj = new JObject();
+            if (obj.ContainsKey("type"))
+            {
+                newObj.Add("type", obj["type"]);
+            }
+            foreach (var prop in obj.Properties())
+            {
+                if (prop.Name != "type")
+                {
+                    newObj.Add(prop.Name, ReorderDiscriminator(prop.Value));
+                }
+            }
+            return newObj;
+        }
+        else if (token is JArray arr)
+        {
+            var newArr = new JArray();
+            foreach (var item in arr)
+            {
+                newArr.Add(ReorderDiscriminator(item));
+            }
+            return newArr;
+        }
+        return token;
+    }
+
     public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, Newtonsoft.Json.JsonSerializer serializer)
     {
         if (reader.TokenType == JsonToken.Null) return null;
         var token = JToken.Load(reader);
+        token = ReorderDiscriminator(token);
+
         using var ms = new MemoryStream();
         using var sw = new StreamWriter(ms, new UTF8Encoding(false));
         using var jw = new JsonTextWriter(sw);
         token.WriteTo(jw);
         jw.Flush();
         sw.Flush();
-        return System.Text.Json.JsonSerializer.Deserialize<T>(ms.ToArray(), AnnotationExtensions.SerializerOptions);
+        var json = ms.ToArray();
+        return System.Text.Json.JsonSerializer.Deserialize<T>(json, AnnotationExtensions.SerializerOptions);
     }
 
     public override void WriteJson(JsonWriter writer, object? value, Newtonsoft.Json.JsonSerializer serializer)
@@ -136,7 +170,7 @@ public abstract record Annotation
 
 [Newtonsoft.Json.JsonConverter(typeof(StjBridgeConverter<AnnotationTuple>))]
 public record AnnotationTuple(
-    [property: JsonPropertyName("range")] RangeInclusiveDef<AnnotationPosition> Range,
+    [property: JsonPropertyName("range")] Location Range,
     [property: JsonPropertyName("annotation")] Annotation Annotation
 );
 
@@ -145,7 +179,8 @@ public static class AnnotationExtensions
     internal static JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() }
+        Converters = { new JsonStringEnumConverter() },
+        TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver()
     };
 
     public static void SetSerializerOptions(JsonSerializerOptions options)
