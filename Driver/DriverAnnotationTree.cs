@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 // Bridge converter to allow Newtonsoft.Json (used by OmniSharp) to delegate to System.Text.Json
@@ -62,6 +63,20 @@ public class StjBridgeConverter<T> : Newtonsoft.Json.JsonConverter
     {
         if (value == null) { writer.WriteNull(); return; }
         writer.WriteRawValue(System.Text.Json.JsonSerializer.Serialize(value, AnnotationExtensions.SerializerOptions));
+    }
+}
+
+public class DocumentUriJsonConverter : System.Text.Json.Serialization.JsonConverter<DocumentUri>
+{
+    public override DocumentUri? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var s = reader.GetString();
+        return s is null ? null : DocumentUri.Parse(s);
+    }
+
+    public override void Write(Utf8JsonWriter writer, DocumentUri value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.ToString());
     }
 }
 
@@ -165,7 +180,7 @@ public abstract record Annotation
     public record IncompleteTypePath([property: JsonPropertyName("path")] TypePathSegment[] Path, [property: JsonPropertyName("op")] PathOp Op) : Annotation;
     public record IncompleteTreePath([property: JsonPropertyName("is_absolute")] bool IsAbsolute, [property: JsonPropertyName("idents")] string[] Idents) : Annotation;
     public record ProcArguments([property: JsonPropertyName("scope")] string[] Scope, [property: JsonPropertyName("ident")] string Ident, [property: JsonPropertyName("arity")] int Arity) : Annotation;
-    public record ProcArgument([property: JsonPropertyName("index")] int Index) : Annotation;
+    public record ProcArgument([property: JsonPropertyName("ident")] string Ident, [property: JsonPropertyName("index")] int Index) : Annotation;
 }
 
 [Newtonsoft.Json.JsonConverter(typeof(StjBridgeConverter<AnnotationTuple>))]
@@ -179,7 +194,7 @@ public static class AnnotationExtensions
     internal static JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() },
+        Converters = { new JsonStringEnumConverter(), new DocumentUriJsonConverter() },
         TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver()
     };
 

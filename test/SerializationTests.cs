@@ -186,10 +186,10 @@ Test("MacroUse",
 
 Console.WriteLine("\n=== AnnotationTuple (Position-based Range) ===");
 TestTuple("AnnotationTuple with TreePath",
-    "{\"range\":{\"start\":{\"line\":10,\"character\":0},\"end\":{\"line\":10,\"character\":5}},\"annotation\":{\"type\":\"TreePath\",\"is_absolute\":true,\"idents\":[\"usr\"]}}",
+    "{\"range\":{\"uri\":\"file:///test.dm\",\"range\":{\"start\":{\"line\":10,\"character\":0},\"end\":{\"line\":10,\"character\":5}}},\"annotation\":{\"type\":\"TreePath\",\"is_absolute\":true,\"idents\":[\"usr\"]}}",
     v =>
     {
-        Debug.Assert(v.Range.Start.Line == 10);
+        Debug.Assert(v.Range.Range.Start.Line == 10);
         Debug.Assert(v.Annotation is Annotation.TreePath);
     });
 
@@ -200,14 +200,14 @@ TestNewtonsoftBridge<Annotation>("Bridge Annotation (MacroUse)",
     v => Debug.Assert(v is Annotation.MacroUse mu && mu.Name == "MACRO"));
 
 TestNewtonsoftBridge<AnnotationTuple>("Bridge AnnotationTuple",
-    "{\"range\":{\"start\":{\"line\":5,\"character\":1},\"end\":{\"line\":5,\"character\":10}},\"annotation\":{\"type\":\"UnscopedVar\",\"ident\":\"x\"}}",
+    "{\"range\":{\"uri\":\"file:///test.dm\",\"range\":{\"start\":{\"line\":5,\"character\":1},\"end\":{\"line\":5,\"character\":10}}},\"annotation\":{\"type\":\"UnscopedVar\",\"ident\":\"x\"}}",
     v => {
-        Debug.Assert(v.Range.Start.Character == 1);
+        Debug.Assert(v.Range.Range.Start.Character == 1);
         Debug.Assert(v.Annotation is Annotation.UnscopedVar uv && uv.Ident == "x");
     });
 
 TestNewtonsoftBridge<QueryAnnotationTreeResult>("Bridge Full Result",
-    "{\"outputAnnotations\": [{\"range\":{\"start\":{\"line\":1,\"character\":1},\"end\":{\"line\":1,\"character\":2}},\"annotation\":{\"type\":\"ReturnVal\"}}]}",
+    "{\"outputAnnotations\": [{\"range\":{\"uri\":\"file:///test.dm\",\"range\":{\"start\":{\"line\":1,\"character\":1},\"end\":{\"line\":1,\"character\":2}}},\"annotation\":{\"type\":\"ReturnVal\"}}]}",
     v => {
         Debug.Assert(v.outputAnnotations!.Length == 1);
         Debug.Assert(v.outputAnnotations[0].Annotation is Annotation.ReturnVal);
@@ -234,7 +234,7 @@ Console.WriteLine("\n=== Immediate Enumeration ===");
 // so they can be enumerated immediately after LSP response deserialization.
 
 // 1) QueryAnnotationTreeResult.outputAnnotations is AnnotationTuple[] (not IEnumerable deferred)
-var resultJson = """{"outputAnnotations":[{"range":{"start":{"line":1,"character":1},"end":{"line":1,"character":2}},"annotation":{"type":"ReturnVal"}},{"range":{"start":{"line":2,"character":0},"end":{"line":2,"character":3}},"annotation":{"type":"TreePath","is_absolute":true,"idents":["usr","src"]}}]}""";
+var resultJson = """{"outputAnnotations":[{"range":{"uri":"file:///a.dm","range":{"start":{"line":1,"character":1},"end":{"line":1,"character":2}}},"annotation":{"type":"ReturnVal"}},{"range":{"uri":"file:///b.dm","range":{"start":{"line":2,"character":0},"end":{"line":2,"character":3}}},"annotation":{"type":"TreePath","is_absolute":true,"idents":["usr","src"]}}]}""";
 TestImmediateEnum("OutputAnnotations type", resultJson, r =>
 {
     Debug.Assert(r.outputAnnotations is AnnotationTuple[], "outputAnnotations should be AnnotationTuple[] (concrete array)");
