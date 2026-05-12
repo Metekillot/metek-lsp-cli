@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 // Bridge converter to allow Newtonsoft.Json (used by OmniSharp) to delegate to System.Text.Json
 public class StjBridgeConverter<T> : Newtonsoft.Json.JsonConverter
@@ -169,7 +170,7 @@ public abstract record Annotation
 
 [Newtonsoft.Json.JsonConverter(typeof(StjBridgeConverter<AnnotationTuple>))]
 public record AnnotationTuple(
-    [property: JsonPropertyName("range")] RangeInclusiveDef<AnnotationPosition> Range,
+    [property: JsonPropertyName("range")] Location Range,
     [property: JsonPropertyName("annotation")] Annotation Annotation
 );
 
